@@ -3,86 +3,25 @@
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import KFold
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, Lasso
+from sklearn.ensemble import RandomForestRegressor
 ```
 
 ```{python}
-#import time
+import time
 
 from sklearn.datasets import load_diabetes
 X_diab, y_diab = load_diabetes(return_X_y=True, as_frame=True)
 
+colnames = X_diab.columns.to_numpy()
+
 t0 = time.time()
-results = select(X_diab, y_diab)
+results = select(X_diab, y_diab, colnames)
 fulltime = time.time() - t0
 ```
 
 ```{python}
-def load_baseball_GA(path="baseball.dat"):
-    """
-    Load and prepare the baseball dataset using the exact predictor order
-    given in Table 3.1 of Givens & Hoeting (p. 67).
-    Returns X (n×27), y (log salary), and predictor names.
-    """
-
-    # Read the whitespace-delimited data
-    df = pd.read_csv(path, sep=r"\s+", header=None)
-
-    # Table 3.1 variable order (27 predictors)
-    predictor_names = [
-        "avg",            # 1 batting average
-        "obp",            # 2 on base pct
-        "runs",           # 3 runs scored
-        "hits",           # 4 hits
-        "doubles",        # 5 doubles
-        "triples",        # 6 triples
-        "hr",             # 7 home runs
-        "rbi",            # 8 runs batted in
-        "walks",          # 9 walks
-        "so",             # 10 strikeouts
-        "sb",             # 11 stolen bases
-        "errors",         # 12 errors
-        "freeagency",     # 13 free agent indicator
-        "arbitration",    # 14 arbitration indicator
-        "runs_per_so",    # 15
-        "hits_per_so",    # 16
-        "hr_per_so",      # 17
-        "rbi_per_so",     # 18
-        "walks_per_so",   # 19
-        "obp_errors",     # 20
-        "runs_errors",    # 21
-        "hits_errors",    # 22
-        "hr_errors",      # 23
-        "so_errors",      # 24
-        "sb_obp",         # 25
-        "sb_runs",        # 26
-        "sb_hits"         # 27
-    ]
-
-    # Last column in baseball.dat is salary
-    salary_name = "salary"
-
-    # Assign column names to df
-    df.columns = predictor_names + [salary_name]
-
-    # Response: log(salary)
-    y = np.log(df[salary_name].to_numpy())
-
-    # Predictor matrix in EXACT Table 3.1 order
-    X = df[predictor_names].to_numpy()
-
-    return X, y, predictor_names
-```
-
-```{python}
-X, y, names = load_baseball_GA("baseball.dat")
-print(X.shape)   # (337, 27)
-print(y.shape)
-print(names)
-```
-
-```{python}
-def select(X, y, pred_names=None, P=20, G=100, mut_rate=0.01):
+def select(X, y, pred_names=None, penalty=0.0, model_type="linear", P=20, G=100, mut_rate=0.01):
     """Genetic Algorithm for variable selection.
 
     This function uses a genetic algorithm to do variable selection.
@@ -96,6 +35,10 @@ def select(X, y, pred_names=None, P=20, G=100, mut_rate=0.01):
         Response vector (length n samples)
     pred_names: optional input, coerced to numpy array
         Names of predictors. If None, generic names based on indexing are created.
+    penalty: float
+        Penalize fitness. Default is 0.0.
+    model_type: str
+        linear (for linear regression, default), rf (for random forest), or lasso (for Lasso regression)
     P: int 
         Generation size. Default is 20.
     G: int 
@@ -124,8 +67,8 @@ def select(X, y, pred_names=None, P=20, G=100, mut_rate=0.01):
 
     # Run the main GA function
     best_chrom, R2 = run_ga(
-        X, y, SST,
-        P=P, G=G, mut_rate=mut_rate
+        X, y, penalty, model_type, SST,
+        P, G, mut_rate
     )
 
     selected = np.where(best_chrom == 1)[0]
@@ -134,14 +77,15 @@ def select(X, y, pred_names=None, P=20, G=100, mut_rate=0.01):
     result = {
         "selected": selected,
         "selected_names": selected_names,
-        "R2": R2
+        "R2": R2,
+
     }
 
     return result
 ```
 
 ```{python}
-def run_ga(X, y, SST, P, G, mut_rate):
+def run_ga(X, y, penalty, model_type, SST, P, G, mut_rate):
     """
     High-level GA loop.
     """
@@ -156,9 +100,9 @@ def run_ga(X, y, SST, P, G, mut_rate):
     # Randomly choose 0 or 1 with probability 0.5 
     n, p = X.shape
     pop = (np.random.rand(P, p) < 0.5).astype(int)
-    fitness = compute_fitness(pop, X, y, SST, folds)
+    fitness, fitness_pen = compute_fitness(pop, X, y, penalty, model_type, SST, folds)
 
-    # Track the global best over *all* generations
+    # Track the global best over all generations
     best_fit_overall = fitness.max()
     best_chrom_overall = pop[fitness.argmax()].copy()
 
@@ -169,7 +113,7 @@ def run_ga(X, y, SST, P, G, mut_rate):
         pop = make_new_pop(pop, fitness, mut_rate)
 
         # Evaluate fitness for new generation
-        fitness = compute_fitness(pop, X, y, SST, folds)
+        fitness, fitness_pen = compute_fitness(pop, X, y, penalty, model_type, SST, folds)
 
         # Track best in this generation
         best_fit_gen = fitness.max()
@@ -184,21 +128,24 @@ def run_ga(X, y, SST, P, G, mut_rate):
 ```
 
 ```{python}
-def compute_fitness(gen, X, y, SST, folds):
+def compute_fitness(gen, X, y, penalty, model_type, SST, folds):
     """
     Compute the fitness for each chromosome in the population.
     Where fitness is cross-validated R^2. 
     """
     P, p = gen.shape
     fitness = np.zeros(P)
+    fitness_pen = np.zeros(P)
 
     # Loop over chromosomes 
     for i in range(P):
         chrom = gen[i]
+        k = chrom.sum()
 
         # If no predictors selected, give a horrible fitness 
-        if chrom.sum() == 0:
+        if k == 0:
             fitness[i] = -1e9
+            fitness_pen[i] = -1e9
             continue
 
         X_sel = X[:, chrom == 1]
@@ -213,8 +160,25 @@ def compute_fitness(gen, X, y, SST, folds):
             X_test = X_sel[test_idx]
             y_test = y[test_idx]
 
-            # Simple linear regression
-            model = LinearRegression()
+            if model_type == "linear":
+                model = LinearRegression()
+
+            elif model_type == "rf":
+                model = RandomForestRegressor(
+                    n_estimators=300,
+                    max_features="sqrt",
+                    n_jobs=-1,
+                    random_state=42
+                )
+
+            elif model_type == "lasso":
+                model = Lasso(
+                    alpha=0.001,
+                    max_iter=5000,
+                    tol=1e-4,
+                    random_state=42
+                )
+
             model.fit(X_train, y_train)
 
             # Predict on test fold
@@ -222,9 +186,11 @@ def compute_fitness(gen, X, y, SST, folds):
             SSR += np.sum(errors**2)
 
         # Cross-validated R^2
-        fitness[i] = 1 - (SSR/SST)
+        R2 = 1 - (SSR/SST)
+        fitness[i] = R2
+        fitness_pen[i] = R2 - penalty*(k/p)
 
-    return fitness
+    return fitness, fitness_pen
 ```
 
 ```{python}
