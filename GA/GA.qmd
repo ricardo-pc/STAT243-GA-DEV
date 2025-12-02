@@ -1,0 +1,215 @@
+
+```{python}
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import KFold
+from sklearn.linear_model import LinearRegression
+```
+
+```{python}
+import time
+
+from sklearn.datasets import load_diabetes
+X_diab, y_diab = load_diabetes(return_X_y=True, as_frame=True)
+
+t0 = time.time()
+results = select(X_diab, y_diab)
+fulltime = time.time() - t0
+```
+
+```{python}
+def select(X, y, pred_names=None, P=20, G=50, mut_rate=0.01):
+    """Genetic Algorithm for variable selection.
+
+    This function uses a genetic algorithm to do variable selection.
+    The fitness metric us cross-validated R^2.
+
+    Parameters
+    ----------
+    X: coerced to numpy array
+        Predictor matrix (n samples by p predictors)
+    y: coerced to numpy array
+        Response vector (length n samples)
+    pred_names: optional input, coerced to numpy array
+        Names of predictors. If None, generic names based on indexing are created.
+    P: int 
+        Generation size. Default is 20.
+    G: int 
+        Number of generations. Default is 50. 
+    mut_rate: float 
+        Mutation rate. Default is 0.01 (1%).
+
+    Returns
+    -------
+    result: dict
+        A dictonary with: selected (index of best predictors), selected_names (names of best predictors), R2 (R^2 value of best model), R2pen (penalized R^2 value)
+    """
+    X = np.asarray(X)
+    y = np.asarray(y)
+
+    n, p = X.shape
+
+    # If user doesn't pass predictor names, create generic ones
+    if pred_names is None:
+        pred_names = np.array([f"x{j}" for j in range(p)])
+    else:
+        pred_names = np.asarray(pred_names)
+
+    # Total sum of squares 
+    SST = np.sum((y - np.mean(y))**2)
+
+    # Run the main GA function
+    best_chrom, R2 = run_ga(
+        X, y, SST,
+        P=P, G=G, mut_rate=mut_rate
+    )
+
+    selected = np.where(best_chrom == 1)[0]
+    selected_names = pred_names[best_chrom == 1]
+
+    result = {
+        "selected": selected,
+        "selected_names": selected_names,
+        "R2": R2
+    }
+
+    return result
+```
+
+```{python}
+def run_ga(X, y, SST, P, G, mut_rate):
+    """
+    High-level GA loop.
+    """
+    # K-fold splitter
+    kf = KFold(n_splits=5, shuffle=True)
+    folds = list(kf.split(X))
+
+    # Create initial population (gen 0)
+    # Each chromosome is a p-length vector of 0s and 1s
+    # 1: include that predictor 
+    # 0: exclude that predictor 
+    # Randomly choose 0 or 1 with probability 0.5 
+    n, p = X.shape
+    pop = (np.random.rand(P, p) < 0.5).astype(int)
+    fitness = compute_fitness(pop, X, y, SST, folds)
+
+    # Track the global best over *all* generations
+    best_fit_overall = fitness.max()
+    best_chrom_overall = pop[fitness.argmax()].copy()
+
+    # Loop over generations 
+    for gen in range(G):
+        
+        # Evolve population (new generation)
+        pop = make_new_pop(pop, fitness, mut_rate)
+
+        # Evaluate fitness for new generation
+        fitness = compute_fitness(pop, X, y, SST, folds)
+
+        # Track best in this generation
+        best_fit_gen = fitness.max()
+        best_chrom_gen = fitness.argmax()
+
+        # If this generation found a better model, update global best
+        if best_fit_gen > best_fit_overall:
+            best_fit_overall = best_fit_gen
+            best_chrom_overall = pop[best_chrom_gen].copy()
+
+    return best_chrom_overall, best_fit_overall
+```
+
+```{python}
+def compute_fitness(gen, X, y, SST, folds):
+    """
+    Compute the fitness for each chromosome in the population.
+    Where fitness is cross-validated R^2. 
+    """
+    P, p = gen.shape
+    fitness = np.zeros(P)
+
+    # Loop over chromosomes 
+    for i in range(P):
+        chrom = gen[i]
+
+        # If no predictors selected, give a horrible fitness 
+        if chrom.sum() == 0:
+            fitness[i] = -1e9
+            continue
+
+        X_sel = X[:, chrom == 1]
+        SSR = 0.0 # sum of squared residuals
+
+        # Cross-validation loop over folds 
+        for train_idx, test_idx in folds:
+
+            X_train = X_sel[train_idx]
+            y_train = y[train_idx]
+
+            X_test = X_sel[test_idx]
+            y_test = y[test_idx]
+
+            # Simple linear regression
+            model = LinearRegression()
+            model.fit(X_train, y_train)
+
+            # Predict on test fold
+            errors = y_test - model.predict(X_test)
+            SSR += np.sum(errors**2)
+
+        # Cross-validated R^2
+        fitness[i] = 1 - (SSR/SST)
+
+    return fitness
+```
+
+```{python}
+def make_new_pop(gen, fitness, mut_rate):
+    """
+    Create a new generation from the current one.
+    """
+    P, p = gen.shape
+
+    # 1. Rank-based selection to define how likely
+    # each individual is to be chosen as a parent 
+    idx_sorted = np.argsort(fitness)
+    ranks = np.empty(P, dtype=float)
+    ranks[idx_sorted] = np.arange(1, P + 1)
+    selection_prob = ranks / ranks.sum()
+
+    # 2. Single-point crossover to mix two parents into children 
+    parent1_idx = np.random.choice(P, size=P, p=selection_prob)
+    parent2_idx = np.random.randint(0, P, size=P)
+
+    parent1 = gen[parent1_idx]
+    parent2 = gen[parent2_idx]
+
+    # crossover points
+    pairs = P//2
+    pair_cross_pts = np.random.randint(1, p, size = pairs)
+    cross_pts = np.repeat(pair_cross_pts, 2)
+
+    # if P is odd, repeat last parent's crossover 
+    # to avoid shape errors 
+    if P % 2 == 1:
+        cross_pts = np.append(cross_pts, pair_cross_pts[-1])
+
+    # masks for each child: head = parent1, tail = parent2
+    col_idx = np.arange(p)
+    heads = col_idx < cross_pts[:, None]
+    tails = ~heads
+
+    # complete crossover 
+    new_pop = parent1*heads + parent2*tails
+
+    # if P is odd, the last child is just a copy of a parent
+    if P % 2 == 1:
+        new_pop[-1] = parent1[-1]
+
+    # 3. Mutation: for each gene (bit), flip with small probability
+    mutation_mask = (np.random.rand(P, p) < mut_rate)
+    new_pop ^= mutation_mask
+
+    return new_pop
+```
+

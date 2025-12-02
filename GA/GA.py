@@ -1,49 +1,11 @@
 # ============================================================
-# Genetic Algorithm for Variable Selection on Baseball Data
-# Fitness = K-fold Cross-Validated R^2
+# Genetic Algorithm for variable selection
 # ============================================================
 
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import KFold
 from sklearn.linear_model import LinearRegression
-
-
-# ------------------------------------------------------------
-# 0. Data loading & basic quantities
-# ------------------------------------------------------------
-
-def load_baseball_data(filepath):
-    """
-    Load the baseball data and prepare:
-      - X: predictor matrix
-      - y: log(salary) as the response
-      - predictor_names: column names
-      - TSS: total sum of squares of y around its mean (for R^2)
-    """
-    # Read the data; whitespace-separated
-    df = pd.read_csv(filepath, sep=r"\s+")
-
-    # Response: we take log(salary) to reduce skew / stabilize variance
-    y_raw = df["salary"].values
-    y = np.log(y_raw)
-
-    # Predictors: everything except salary
-    X_df = df.drop(columns=["salary"])
-    X = X_df.values
-    predictor_names = X_df.columns.to_numpy()
-
-    n, p = X.shape
-    print(f"Number of observations: {n}, Number of predictors: {p}")
-    print("Predictor names:", list(predictor_names))
-
-    # TSS = sum of squared deviations from the mean of y
-    # This is the denominator for R^2 = 1 - SSPE / TSS
-    mean_y = np.mean(y)
-    TSS = np.sum((y - mean_y) ** 2)
-
-    return X, y, predictor_names, TSS
-
 
 # ------------------------------------------------------------
 # 1. GA building blocks
@@ -318,59 +280,3 @@ def select(X, y,
         "selected_predictors": list(selected_predictors),
     }
     return result
-
-
-# ------------------------------------------------------------
-# 3. Script entry point (demo using baseball.dat)
-# ------------------------------------------------------------
-
-def main():
-    """
-    This is what runs when you do, e.g.:
-
-        python -m GA.select
-
-    Here we:
-      - load baseball.dat,
-      - call select(),
-      - print a summary of results.
-    """
-    # GA hyperparameters (tweak here if you want)
-    P = 20          # how many models per generation
-    G = 50          # how many generations
-    K = 5           # K for K-fold CV
-    mutation_rate = 0.01
-    seed = 42
-
-    # 1. Load and prepare data
-    X, y, predictor_names, _ = load_baseball_data("baseball.dat")
-
-    # 2. Run GA via the public API
-    result = select(
-        X, y,
-        predictor_names=predictor_names,
-        P=P, G=G, K=K,
-        mutation_rate=mutation_rate,
-        seed=seed,
-    )
-
-    best_chromosome = result["best_chromosome"]
-    best_fitness = result["best_R2"]
-    selected_predictors = result["selected_predictors"]
-    history = result["history"]
-
-    print("\n=== FINAL RESULT ===")
-    print("Best overall fitness (CV-R^2):", best_fitness)
-    print("\nBest chromosome (0/1 vector):")
-    print(best_chromosome)
-    print("Number of predictors selected:", best_chromosome.sum())
-    print("\nSelected predictor names:")
-    print(selected_predictors)
-    print("\nBest fitness history (per generation, including Gen 0):")
-    print(history)
-
-
-if __name__ == "__main__":
-    # This makes Python run main() only if you call the script directly,
-    # and not when you import it from a notebook or another file.
-    main()
