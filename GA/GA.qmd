@@ -18,7 +18,22 @@ colnames = X_diab.columns
 
 ```{python}
 t0 = time.time()
-results = select(X_diab, y_diab, model_type="tree")
+results = select(X_diab, y_diab, model_type="linear")
+fulltime = time.time() - t0
+print(results)
+print(fulltime)
+```
+
+```{python}
+df = pd.read_csv('baseball.dat', sep=r"\s+")
+y_raw = df['salary'].values
+y = np.log(y_raw) 
+X = df.loc[:, df.columns != 'salary'].values
+```
+
+```{python}
+t0 = time.time()
+results = select(X, y, model_type="linear")
 fulltime = time.time() - t0
 print(results)
 print(fulltime)
@@ -29,7 +44,7 @@ def select(X, y, pred_names=None, penalty=None, model_type="linear", model_param
     """Genetic Algorithm for variable selection.
 
     This function uses a genetic algorithm to do variable selection.
-    The fitness metric us cross-validated R^2.
+    The fitness metric is cross-validated R^2.
 
     Parameters
     ----------
@@ -71,7 +86,7 @@ def select(X, y, pred_names=None, penalty=None, model_type="linear", model_param
     # Total sum of squares 
     SST = np.sum((y - np.mean(y))**2)
 
-    # Run the main GA function
+    # Main GA function
     best_chrom, best_main, best_aux = run_ga(
         X, y, penalty, model_type, model_params,
         SST, P, G, mut_rate
@@ -97,19 +112,20 @@ def select(X, y, pred_names=None, penalty=None, model_type="linear", model_param
     return result
 ```
 
+
+
 ```{python}
 def run_ga(X, y, penalty, model_type, model_params, SST, P, G, mut_rate):
     """
-    High-level GA loop.
+    High-level Genetic Algorithm loop.
     """
     # K-fold splitter
     kf = KFold(n_splits=5, shuffle=True)
     folds = list(kf.split(X))
 
-    # Create initial population (gen 0)
+    # Create initial population (generation 0)
     # Each chromosome is a p-length vector of 0s and 1s
-    # 1: include that predictor 
-    # 0: exclude that predictor 
+    # 1: include that predictor; 0: exclude that predictor 
     # Randomly choose 0 or 1 with probability 0.5 
     n, p = X.shape
     pop = (np.random.rand(P, p) < 0.5).astype(int)
@@ -122,7 +138,8 @@ def run_ga(X, y, penalty, model_type, model_params, SST, P, G, mut_rate):
         main_fit = fitness_pen
         aux_fit = fitness_raw
 
-    # Track the global best over all generations
+    # Track the global best fitness and chromosome
+    # over all generations
     best_idx = main_fit.argmax()
     best_main = main_fit[best_idx]
     best_aux = aux_fit[best_idx]
@@ -144,11 +161,11 @@ def run_ga(X, y, penalty, model_type, model_params, SST, P, G, mut_rate):
             main_fit = fitness_pen
             aux_fit = fitness_raw
 
-        # Track best in this generation
+        # Track best fitness for this generation
         best_idx_gen = main_fit.argmax()
         best_main_gen = main_fit[best_idx_gen]
 
-        # If this generation found a better model, update global best
+        # If this generation found a better model, update global bests
         if best_main_gen > best_main:
             best_main = best_main_gen
             best_aux = aux_fit[best_idx_gen]
@@ -160,7 +177,7 @@ def run_ga(X, y, penalty, model_type, model_params, SST, P, G, mut_rate):
 ```{python}
 def compute_fitness(gen, X, y, penalty, model_type, model_params, SST, folds):
     """
-    Compute the fitness for each chromosome in the population.
+    Compute the fitness for each chromosome in the current population.
     Where fitness is cross-validated R^2. 
     """
     P, p = gen.shape
@@ -187,7 +204,7 @@ def compute_fitness(gen, X, y, penalty, model_type, model_params, SST, folds):
         chrom = gen[i]
         k = chrom.sum()
 
-        # If no predictors selected, give a horrible fitness 
+        # If no predictors selected, give bad fitness 
         if k == 0:
             fitness_raw[i] = -1e9
             fitness_pen[i] = -1e9
@@ -196,7 +213,7 @@ def compute_fitness(gen, X, y, penalty, model_type, model_params, SST, folds):
         X_sel = X[:, chrom == 1]
         SSR = 0.0 # sum of squared residuals
 
-        # Cross-validation loop over folds 
+        # Cross-validation loop 
         for train_idx, test_idx in folds:
 
             X_train = X_sel[train_idx]
@@ -216,14 +233,14 @@ def compute_fitness(gen, X, y, penalty, model_type, model_params, SST, folds):
                 params = default_lasso if model_params is None else model_params
                 model = Lasso(**params)
 
+            # Fit model on training fold 
             model.fit(X_train, y_train)
 
             # Predict on test fold
             errors = y_test - model.predict(X_test)
             SSR += np.sum(errors**2)
 
-        # Cross-validated R^2
-        R2_raw = 1 - (SSR/SST)
+        R2_raw = 1 - (SSR/SST)  # Cross-validated R2
 
         if penalty is None:
             R2_pen = R2_raw
@@ -246,38 +263,43 @@ def make_new_pop(gen, fitness, mut_rate):
     # 1. Rank-based selection to define how likely
     # each individual is to be chosen as a parent 
     idx_sorted = np.argsort(fitness)
-    ranks = np.empty(P, dtype=float)
-    ranks[idx_sorted] = np.arange(1, P + 1)
-    selection_prob = ranks / ranks.sum()
+    ranks = np.empty(P, float)
+    ranks[idx_sorted] = np.arange(1, P+1)
+    selection_prob = ranks/ranks.sum()
 
-    # 2. Single-point crossover to mix two parents into children 
-    parent1_idx = np.random.choice(P, size=P, p=selection_prob)
-    parent2_idx = np.random.randint(0, P, size=P)
+    # 2. Single-point crossover to mix parents into children
+    pairs = P//2
+
+    parent1_idx = np.random.choice(P, size=pairs, p=selection_prob)
+    parent2_idx = np.random.randint(0, P, size=pairs)
 
     parent1 = gen[parent1_idx]
     parent2 = gen[parent2_idx]
 
     # crossover points
-    pairs = P//2
-    pair_cross_pts = np.random.randint(1, p, size = pairs)
-    cross_pts = np.repeat(pair_cross_pts, 2)
-
-    # if P is odd, repeat last parent's crossover 
-    # to avoid shape errors 
-    if P % 2 == 1:
-        cross_pts = np.append(cross_pts, pair_cross_pts[-1])
-
-    # masks for each child: head = parent1, tail = parent2
+    cross_pts = np.random.randint(1, p, size=pairs)
     col_idx = np.arange(p)
-    heads = col_idx < cross_pts[:, None]
-    tails = ~heads
 
-    # complete crossover 
-    new_pop = parent1*heads + parent2*tails
+    new_pop = np.zeros_like(gen)
 
-    # if P is odd, the last child is just a copy of a parent
-    if P % 2 == 1:
-        new_pop[-1] = parent1[-1]
+    # create children 
+    for k in range(pairs):
+        cp = cross_pts[k]
+        heads = (col_idx < cp)
+        tails = ~heads
+
+        # first child: parent1 head + parent2 tail
+        new_pop[2*k] = parent1[k]*heads + parent2[k]*tails
+
+        # second child: parent1 tail + parent2 head
+        new_pop[2*k+1] = parent2[k]*heads + parent1[k]*tails
+
+    # if P is odd, the last child is just a copy 
+    # of the best-ranked (highest fitness) parent
+    is_odd = (P % 2 == 1)
+    if is_odd:
+        best_parent_idx = idx_sorted[-1]
+        new_pop[-1] = gen[best_parent_idx]
 
     # 3. Mutation: for each gene (bit), flip with small probability
     mutation_mask = (np.random.rand(P, p) < mut_rate)
