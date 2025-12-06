@@ -32,6 +32,10 @@ def select(X, y, pred_names=None, penalty=None, model_type="linear", model_param
         Must be > 1. Number of generations. Default is 100. 
     mut_rate: float 
         Must be between 0 and 1. Mutation rate. Default is 0.01 (1%).
+    parent_selection: str
+        "rank" (for rank-based selection of parents), or "tournament" (for tournament style selciton of parents)
+    crossover_type: str
+        "single" (for single crossover point, default), or "double" (for double crossover point)
 
     Returns
     -------
@@ -194,7 +198,7 @@ def _run_ga(X, y, penalty, model_type, model_params, SST, P, G, mut_rate):
     for gen in range(G):
         
         # Evolve population (new generation)
-        pop = _make_new_pop(pop, main_fit, mut_rate)
+        pop = _make_new_pop(pop, main_fit, mut_rate, parent_selection, crossover_type)
 
         # Evaluate fitness for new generation
         fitness_raw, fitness_pen = _compute_fitness(pop, X, y, penalty, model_type, model_params, SST, folds)
@@ -296,48 +300,107 @@ def _compute_fitness(gen, X, y, penalty, model_type, model_params, SST, folds):
     return fitness_raw, fitness_pen
 
 
-def _make_new_pop(gen, fitness, mut_rate):
+def _make_new_pop(gen, fitness, mut_rate, parent_selection="rank", crossover_type = 'single'):
     """
     Create a new generation from the current one.
     """
     P, p = gen.shape
-
-    # 1. Rank-based selection to define how likely
-    # each individual is to be chosen as a parent 
-    idx_sorted = np.argsort(fitness)
-    ranks = np.empty(P, float)
-    ranks[idx_sorted] = np.arange(1, P+1)
-    selection_prob = ranks/ranks.sum()
-
-    # 2. Single-point crossover to mix parents into children
     pairs = P//2
 
-    parent1_idx = np.random.choice(P, size=pairs, p=selection_prob)
-    parent2_idx = np.random.randint(0, P, size=pairs)
+    # 1. Parent selection to define which individuals breed
+    if parent_selection == "rank":
+        # Rank-based selection: rank determines breeding probability
+        idx_sorted = np.argsort(fitness)
+        ranks = np.empty(P, float)
+        ranks[idx_sorted] = np.arange(1, P+1)
+        selection_prob = ranks/ranks.sum()
 
+        parent1_idx = np.random.choice(P, size=pairs, p=selection_prob)
+        parent2_idx = np.random.randint(0, P, size=pairs)
+
+    elif parent_selection == "tournament":
+        # Tournament selection: partition population into groups each round
+        # Determine tournament size (approximately sqrt(P))
+        k = max(2, int(np.sqrt(P)))
+
+        # Need P parents total to create new population
+        num_parents_needed = P
+    
+        # Store selected parents
+        selected_parents = []
+        
+        # Run tournament rounds until we have enough parents
+        while len(selected_parents) < num_parents_needed:
+            # Partition population into groups of size k
+            num_groups = P // k
+            remaining = P % k
+            
+            # Shuffle indices to randomly assign to groups
+            shuffled_idx = np.random.permutation(P)
+            
+            # Run tournaments for each complete group (vectorized)
+            complete_groups = shuffled_idx[:num_groups * k].reshape(num_groups, k)
+            group_fitness = fitness[complete_groups]
+            best_in_groups = complete_groups[np.arange(num_groups), np.argmax(group_fitness, axis=1)]
+            selected_parents.extend(best_in_groups.tolist())
+            
+            # Handle remaining individuals if any (run tournament with smaller group)
+            if remaining > 0 and len(selected_parents) < num_parents_needed:
+                remaining_idx = shuffled_idx[num_groups * k:]
+                remaining_fitness = fitness[remaining_idx]
+                best_in_remaining = remaining_idx[np.argmax(remaining_fitness)]
+                selected_parents.append(best_in_remaining)
+        
+        # Trim to exact number needed
+        selected_parents = selected_parents[:num_parents_needed]
+        
+        # Randomly pair parents for breeding
+        parent_pairs = np.random.permutation(selected_parents)
+        parent1_idx = parent_pairs[0::2][:pairs]
+        parent2_idx = parent_pairs[1::2][:pairs]
+    
     parent1 = gen[parent1_idx]
     parent2 = gen[parent2_idx]
 
-    # crossover points
-    cross_pts = np.random.randint(1, p, size=pairs)
+    # 2. Crossover to mix parents into children
     col_idx = np.arange(p)
-
     new_pop = np.zeros_like(gen)
 
-    # create children 
-    heads_mask = col_idx[np.newaxis, :] < cross_pts[:, np.newaxis]  # shape: (pairs, p)
-    tails_mask = ~heads_mask
+    # crossover type
+    if crossover_type == "single":
+        # Single-point crossover
+        cross_pts = np.random.randint(1, p, size=pairs)
+        
+        # create children 
+        heads_mask = col_idx[np.newaxis, :] < cross_pts[:, np.newaxis]  # shape: (pairs, p)
+        tails_mask = ~heads_mask
 
-    # Create all children at once
-    new_pop[0::2][:pairs] = parent1 * heads_mask + parent2 * tails_mask  # First children (even indices)
-    new_pop[1::2][:pairs] = parent2 * heads_mask + parent1 * tails_mask  # Second children (odd indices)
+        # Create all children at once
+        new_pop[0::2][:pairs] = parent1 * heads_mask + parent2 * tails_mask  # First children (even indices)
+        new_pop[1::2][:pairs] = parent2 * heads_mask + parent1 * tails_mask  # Second children (odd indices)
 
+    elif crossover_type == "double":
+        # Double-point crossover
+        cross_pt1 = np.random.randint(1, p-1, size=pairs)
+        cross_pt2 = np.random.randint(cross_pt1 + 1, p, size=pairs)
+        
+        # create children
+        # Middle segment is between the two crossover points
+        heads_mask = col_idx[np.newaxis, :] < cross_pt1[:, np.newaxis]  # shape: (pairs, p)
+        middle_mask = (col_idx[np.newaxis, :] >= cross_pt1[:, np.newaxis]) & (col_idx[np.newaxis, :] < cross_pt2[:, np.newaxis])
+        tails_mask = col_idx[np.newaxis, :] >= cross_pt2[:, np.newaxis]
+
+        # Create all children at once
+        # First child: parent1 head + parent2 middle + parent1 tail
+        new_pop[0::2][:pairs] = parent1 * heads_mask + parent2 * middle_mask + parent1 * tails_mask
+        # Second child: parent2 head + parent1 middle + parent2 tail
+        new_pop[1::2][:pairs] = parent2 * heads_mask + parent1 * middle_mask + parent2 * tails_mask
 
     # if P is odd, the last child is just a copy 
     # of the best-ranked (highest fitness) parent
     is_odd = (P % 2 == 1)
     if is_odd:
-        best_parent_idx = idx_sorted[-1]
+        best_parent_idx = fitness.argmax()
         new_pop[-1] = gen[best_parent_idx]
 
     # 3. Mutation: for each gene (bit), flip with small probability
