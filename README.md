@@ -152,7 +152,7 @@ pytest tests/
 
 ## Team Members
 
-*   **[Kea Madrone Hoiland Rutherford]:** 
-*   **[Lyla Jane Traylor]:** 
-*   **[Ricardo Pérez Castillo]:** 
+*   **[Kea Madrone Hoiland Rutherford]** 
+*   **[Lyla Jane Traylor]** 
+*   **[Ricardo Pérez Castillo]** 
 
