@@ -76,8 +76,6 @@ select(X, y, pred_names=None, penalty=None, model_type="linear",
        model_params=None, P=None, G=100, mut_rate=0.01)
 ```
 
-Here is a clean, professional way to list the arguments while including the validation requirements (constraints) found in your code. Using a slight indentation or italics for the constraints keeps it readable without looking cluttered.
-
 ### Arguments
 
 *   **`X`** : (2D Array or DataFrame)
