@@ -338,12 +338,11 @@ def _make_new_pop(gen, fitness, mut_rate, parent_selection="rank", crossover_typ
             # Shuffle indices to randomly assign to groups
             shuffled_idx = np.random.permutation(P)
             
-            # Run tournaments for each complete group
-            for group_num in range(num_groups):
-                group_idx = shuffled_idx[group_num * k : (group_num + 1) * k]
-                group_fitness = fitness[group_idx]
-                best_in_group = group_idx[np.argmax(group_fitness)]
-                selected_parents.append(best_in_group)
+            # Run tournaments for each complete group (vectorized)
+            complete_groups = shuffled_idx[:num_groups * k].reshape(num_groups, k)
+            group_fitness = fitness[complete_groups]
+            best_in_groups = complete_groups[np.arange(num_groups), np.argmax(group_fitness, axis=1)]
+            selected_parents.extend(best_in_groups.tolist())
             
             # Handle remaining individuals if any (run tournament with smaller group)
             if remaining > 0 and len(selected_parents) < num_parents_needed:
