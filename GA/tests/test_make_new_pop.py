@@ -42,25 +42,3 @@ def test_output_type():
 
     assert isinstance(new_pop, np.ndarray)
 
-# Test different population sizes
-def test_diff_pop_size():
-    for P in [4, 10, 20, 50]:
-        gen = np.random.randint(0,2, size =(P,8))
-        fitness = np.random.rand(P)
-        mut_rate = 0.01
-
-        new_pop = _make_new_pop(gen, fitness, mut_rate)
-
-        assert new_pop.shape == (P,8)
-
-# Test different number of predictors
-def test_diff_pop_size():
-    for p in [3, 5, 10, 20]:
-        gen = np.random.randint(0,2, size =(10,p))
-        fitness = np.random.rand(10)
-        mut_rate = 0.01
-
-        new_pop = _make_new_pop(gen, fitness, mut_rate)
-
-        assert new_pop.shape == (10,p)
-

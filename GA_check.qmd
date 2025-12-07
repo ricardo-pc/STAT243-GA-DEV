@@ -1,3 +1,4 @@
+```{python}
 import numpy as np
 import pandas as pd
 import math
@@ -5,7 +6,9 @@ import warnings
 from sklearn.model_selection import KFold
 from sklearn.linear_model import LinearRegression, Lasso
 from sklearn.tree import DecisionTreeRegressor
+```
 
+```{python}
 def select(X, y, parent_selection="rank", crossover_type="single", pred_names=None, penalty=None, 
     model_type="linear", model_params=None, pop_size=None, n_gen=100, mut_rate=0.01):
     """Genetic Algorithm for variable selection.
@@ -89,8 +92,9 @@ def select(X, y, parent_selection="rank", crossover_type="single", pred_names=No
     }
 
     return result
+```
 
-
+```{python}
 def _validate_inputs(X, y, pred_names, penalty, model_type, model_params, pop_size, n_gen, mut_rate):
     """
     Check for expected input types.
@@ -163,8 +167,9 @@ def _validate_inputs(X, y, pred_names, penalty, model_type, model_params, pop_si
     # model_params input
     if model_params is not None and not isinstance(model_params, dict):
         raise TypeError("model_params must be a dict")
+```
 
-
+```{python}
 def _run_ga(X, y, parent_selection, crossover_type, penalty, model_type, model_params, SST, pop_size, n_gen, mut_rate):
     """
     High-level Genetic Algorithm loop.
@@ -222,8 +227,29 @@ def _run_ga(X, y, parent_selection, crossover_type, penalty, model_type, model_p
             best_chrom = pop[best_idx_gen]
 
     return best_chrom, best_main, best_aux
+```
 
+```{python}
+X = np.random.rand(50, 5)
+y = np.random.rand(50)
+total_SS = np.sum((y - y.mean())**2)
 
+run_ga_result = _run_ga(X, y, parent_selection="rank",
+                            crossover_type="single",
+                            penalty=0.01, model_type="linear",
+                            model_params=None, SST=total_SS,
+                            pop_size=20, n_gen=10, mut_rate=0.01)
+
+assert isinstance(run_ga_result, tuple)
+assert len(run_ga_result) == 3
+assert isinstance(run_ga_result[1], np.floating)
+assert isinstance(run_ga_result[2], np.floating)
+assert isinstance(run_ga_result[0], np.ndarray)
+assert run_ga_result[0].shape == (5,)  # Should match number of predictors
+assert np.all((run_ga_result[0] == 0) | (run_ga_result[0] == 1))
+```
+
+```{python}
 def _compute_fitness(gen, X, y, penalty, model_type, model_params, SST, folds):
     """
     Compute the fitness for each chromosome in the current population.
@@ -300,8 +326,9 @@ def _compute_fitness(gen, X, y, penalty, model_type, model_params, SST, folds):
         fitness_pen[i] = R2_pen
 
     return fitness_raw, fitness_pen
+```
 
-
+```{python}
 def _make_new_pop(gen, fitness, mut_rate, parent_selection, crossover_type):
     """
     Create a new generation from the current one.
@@ -323,8 +350,9 @@ def _make_new_pop(gen, fitness, mut_rate, parent_selection, crossover_type):
     new_pop_trim ^= mutation_mask
 
     return new_pop_trim
+```
 
-
+```{python}
 def _select_parents(gen, fitness, parent_selection, P):
     """
     Select parents for breeding on the basis of fitness, fitness ranks, or tournaments.
@@ -377,8 +405,9 @@ def _select_parents(gen, fitness, parent_selection, P):
     parent2 = gen[parent2_idx]
 
     return parent1, parent2, pairs
+```
 
-
+```{python}
 def _perform_crossover(parent1, parent2, pairs, crossover_type, p):
     """
     Mix parents into children via signle or double crossover. 
@@ -414,3 +443,4 @@ def _perform_crossover(parent1, parent2, pairs, crossover_type, p):
         new_pop[1::2] = parent2 * heads_mask + parent1 * middle_mask + parent2 * tails_mask
 
     return new_pop
+```
