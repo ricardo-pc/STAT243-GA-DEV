@@ -3,11 +3,11 @@ title: Genetic Algorithm for Variable Selection
 format: gfm
 ---
 
-The `GA` package implements a gentic algorithm to perform variable selection using cross-validated $R^2$ as the fitness metric. 
+The `GA` package implements a genetic algorithm to perform variable selection, balancing predictive performance and model simplicity through an evolution inspired search process.
 
-# How to use the function select()
+## Overview of select()
 
-## Inputs 
+### Inputs 
 
 1. `X` (numpy array or pandas DataFrame): Predictor matrix (n samples by p predictors).
 
@@ -19,7 +19,7 @@ The `GA` package implements a gentic algorithm to perform variable selection usi
 
 5. `penalty` (float): Complexity penalty. Must be between 0 and 1. Default is None, which is equivalent to a penalty of 0. 
 
-6. `model_type` (str): "linear" for linear regression, default, "tree" for decision tree, or "lasso" for Lasso regression. Default is "linear". See further details below.
+6. `model_type` (str): "linear" for linear regression, "tree" for decision tree regression, or "lasso" for lasso regression. Default is "linear". See further details below.
 
 7. `model_params` (dict): Optional input. Model settings for decision tree or Lasso regression. Default is None. See further details below. 
 
@@ -29,7 +29,7 @@ The `GA` package implements a gentic algorithm to perform variable selection usi
 
 10. `mut_rate` (float): Mutation rate. Must be between 0 and 1. Default is 0.01 (1%). A mutation rate > 0.1 is not recommended. 
 
-## Output 
+### Output 
 
 A dictionary containing: 
 
@@ -39,7 +39,7 @@ A dictionary containing:
 
 * "R2pen": penalized cross-validated $R^2$
 
-# Demonstrations 
+## Demonstrations 
 
 ```{python}
 #| include: false
@@ -49,7 +49,7 @@ from GA import select
 from sklearn.preprocessing import StandardScaler
 ```
 
-## Baseball example  
+### Baseball example  
 
 Here we apply the genetic algorithm to a variable selection problem for baseball data. The goal is to find the best subset of predictors to predict salary. 
 
@@ -59,7 +59,7 @@ baseball_df = pd.read_csv("demo_datasets/baseball.dat", sep=r"\s+")
 ```
 
 ```{python}
-baseball_df.head(6)
+print(baseball_df.head(6))
 ```
 
 We use the log of the salary variable as the response variable. And then we rescale the remaining predictor variables.  
@@ -70,15 +70,22 @@ X_baseball = baseball_df.drop(columns=["salary"])
 X_scaled = StandardScaler().fit_transform(X_baseball)
 ```
 
-### Linear vs. Lasso regression 
+<br>
+
+**Linear vs. Lasso regression:**
 
 First, we run the genetic algorithm using a linear regression model and a small penalty. 
 
 ```{python}
-select(X=X_scaled, y=y_baseball, model_type="linear", penalty=0.01)
+result1 = select(X=X_scaled, y=y_baseball, model_type="linear", penalty=0.01)
+
+print(f"Number of selected variables: {len(result1["selected"])}")
+print(f"Selected variable indices: {result1["selected"]}")
+print(f"Cross-validated R^2: {result1["R2"]}")
+print(f"Penalized cross-validated R^2: {result1["R2pen"]}")
 ```
 
-Then, we run the genetic algorithm using a Lasso regression and the same small penalty. We input our own dictionary of model parameters. We can see that Lasso results in a similar $R^2$ as the linear but with fewer parameters, demonstrating the potential benefit of using Lasso. 
+Then, we run the genetic algorithm using a lasso regression and the same small penalty. We input our own dictionary of model parameters. We can see that lasso results in a similar $R^2$ as the linear but with fewer parameters, demonstrating the potential benefit of using lasso. 
 
 ```{python}
 lasso_params = {
@@ -88,24 +95,43 @@ lasso_params = {
     "random_state": 42
 }
 
-select(X=X_scaled, y=y_baseball, model_type="lasso", model_params=lasso_params, penalty=0.01)
+result2 = select(X=X_scaled, y=y_baseball, model_type="lasso", 
+    model_params=lasso_params, penalty=0.01)
+
+print(f"Number of selected variables: {len(result2["selected"])}")
+print(f"Selected variable indices: {result2["selected"]}")
+print(f"Cross-validated R^2: {result2["R2"]}")
+print(f"Penalized cross-validated R^2: {result2["R2pen"]}")
 ```
 
-### Different ways to produce new generations  
+<br>
+
+**Different ways to produce new generations:**  
 
 We again run the genetic algorithm using a linear regression model. But we only use 30 generations (as opposed to the default 100).  
 
 ```{python}
-select(X=X_scaled, y=y_baseball, model_type="linear", n_gen=30)
+result3 = select(X=X_scaled, y=y_baseball, model_type="linear", n_gen=30)
+
+print(f"Number of selected variables: {len(result3["selected"])}")
+print(f"Selected variable indices: {result3["selected"]}")
+print(f"Cross-validated R^2: {result3["R2"]}")
+print(f"Penalized cross-validated R^2: {result3["R2pen"]}")
 ```
 
 Then, we change the parent_selection from the default "rank" to "tournament" and the crossover_type from the default "single" to "double". We can see that this run results a similar $R^2$ but with fewer parameters. This demonstrates that these parent selection and crossover methods help find the best predictors in fewer generations.
 
 ```{python}
-select(X=X_scaled, y=y_baseball, model_type="linear", parent_selection="tournament", crossover_type="double", n_gen=30)
+result4 = select(X=X_scaled, y=y_baseball, model_type="linear", 
+    parent_selection="tournament", crossover_type="double", n_gen=30)
+
+print(f"Number of selected variables: {len(result4["selected"])}")
+print(f"Selected variable indices: {result4["selected"]}")
+print(f"Cross-validated R^2: {result4["R2"]}")
+print(f"Penalized cross-validated R^2: {result4["R2pen"]}")
 ```
 
-## Employee satisfaction example 
+### Employee satisfaction example 
 
 Here we apply the genetic algorithm to a variable selection problem for employee satisfaction. The goal is to find the best subset of predictors to predict satisfaction level. 
 
@@ -115,37 +141,49 @@ employee_df = pd.read_csv("demo_datasets/employees.csv")
 ```
 
 ```{python}
-employee_df.head(6)
+print(employee_df.head(6))
 ```
 
-First, we run the genetic algorithm using a linear regression model and all other settings as default. The linear regression results in a terrible $R^2$ of < 0.1. 
+First, we run the genetic algorithm using a linear regression model and all other settings as default. The linear regression results in a terrible $R^2$. 
 
 ```{python}
 y_employee = employee_df["satisfaction_level"]
 X_employee = employee_df.drop(columns=["satisfaction_level"])
 
-select(X=X_employee, y=y_employee)
+result5 = select(X=X_employee, y=y_employee)
+
+print(f"Number of selected variables: {len(result5["selected"])}")
+print(f"Selected variable indices: {result5["selected"]}")
+print(f"Cross-validated R^2: {result5["R2"]}")
+print(f"Penalized cross-validated R^2: {result5["R2pen"]}")
 ```
 
-Then, we run the genetic algorithm using a Decision Tree Regression. We can see that the decision tree results in a much better $R^2$ (up to ~0.4). Although we still are not getting great performance here, this example demonstrates the usefulness of the more flexible Decision Tree Regression. 
+Then, we run the genetic algorithm using a decision tree regression. We can see that the decision tree results in a much better $R^2$. Although we still are not getting great performance here, this example demonstrates the usefulness of the more flexible decision tree regression. 
 
 ```{python}
-select(X=X_employee, y=y_employee, model_type="tree")
+result6 = select(X=X_employee, y=y_employee, model_type="tree")
+
+print(f"Number of selected variables: {len(result6["selected"])}")
+print(f"Selected variable indices: {result6["selected"]}")
+print(f"Cross-validated R^2: {result6["R2"]}")
+print(f"Penalized cross-validated R^2: {result6["R2pen"]}")
 ```
 
-# Further details on input parameters
+## Further details on input parameters
 
 ### `model_type`
 
-* "linear": LinearRegression from sklearn.linear_model
+* "linear": uses `LinearRegression` from `sklearn.linear_model`
+    
+    * Performs ordinary least squares estimation.
 
-* "lasso": Lasso from sklearn.linear_model
+* "lasso": uses `Lasso` from `sklearn.linear_model`
 
-    * Lasso Regression is useful for selecting important predictors by shrinking unimportant coefficients to zero.
+    * Lasso regression is useful for selecting important predictors by shrinking unimportant coefficients to zero.
 
-* "tree": DecisionTreeRegressor from sklearn.tree
+* "tree": uses `DecisionTreeRegressor` from `sklearn.tree`
 
-    * A Decision Tree Regressor can handle nonlinear relationships and potential interactions among predictors.
+    * A decision tree regressor can handle nonlinear relationships and potential interactions among predictors.
 
 ### `model_params`
 
@@ -165,13 +203,13 @@ default_lasso = {
     "random_state": 42
 }
 
-# Overview of the genetic algorithm 
+## Overview of the genetic algorithm 
 
-## Setup
+### Setup
 
 We will use an example to help explain the genetic algorithm. Let's say we have 6 predictors and the population size (`pop_size`) is set to 4.  
 
-## Generation 0
+### Generation 0
 
 Since we have 6 predictors, each chromosome will have 6 genes/bits. And since the population size was set to 4 we will have 4 individuals in each generation. For the starting population, the chromosomes for each individual are selected purly at random.  
 
@@ -182,68 +220,62 @@ Since we have 6 predictors, each chromosome will have 6 genes/bits. And since th
 |C|110110|predictors 0,1,3,4|
 |D|000101|predictors 3,5|
 
-Then, for each individual, we fit a model (linear regression, Lasso regression, or Decision Tree Regression depending on `model_type`). For example, for individual A we would fit a model with predictors 0 and 3. 
+Then, for each individual, we fit a model (linear regression, lasso regression, or decision tree regression depending on `model_type`). For example, for individual A we would fit a model with predictors 0 and 3. 
 
-We calculate 10-fold cross-validated $R^2$. penalized $R^2$ is calculated as $R^2 - \lambda f$, where $\lambda$ is determined by `penalty` and $f$ is the fraction of potential predictors that are selected. 
+We calculate 10-fold cross-validated $R^2$. penalized $R^2$ is calculated as $R^2 - \lambda*f$, where $\lambda$ is determined by `penalty` and $f$ is the fraction of potential predictors that are selected. 
 
-## Parent selection (`parent_selection`)
+### Parent selection (`parent_selection`)
 
-### Rank-based selection 
+**Rank-based selection**
 
 One parent is selected with probability proportional to rank. The other parent is selected purly at random. 
 
-|individual|$R^2$|rank|prob of selection|
+|individual|$R^2$|rank|probability of selection|
 |---|---|---|---|
 |C|0.6|4|4/10|
 |A|0.5|3|3/10|
 |B|0.4|2|2/10|
 |D|0.3|1|1/10|
 
-### Tournament selection 
+<br>
+
+**Tournament selection**
 
 The set of chromosomes in the generation are randomly partitioned into k groups. The best individual in each group is chosen as a parent. Games continue until a sifficient number of parents have been selected. Parents are then paried randomly for breeding. Tournament selection applies more selective pressure than rank-based selection. 
 
-## Parent crossover (`crossover_type`)
+### Parent crossover (`crossover_type`)
 
-### Single-point crossover 
+**Single-point crossover**
 
 For each pair of parents, a random position is selected to split the chromosomes. The left chromosome segment from one parent is glued to the right chromosome segment from the other parent to form a child. The remaining segments are combined to form a second child. 
 
 For example, if parents B and C have been paired for crossover and 3 is the random position selected:
 
-Parent C: (**110**110)
+* Parent C: (**110**110) and Parent B: (011**000**)
 
-Parent B: (011**000**)
+* Child 1: (**110000**) and Child 2: (011110)
 
-Child 1: (**110000**)
+<br>
 
-Child 2: (011110)
-
-### Double-point crossover 
+**Double-point crossover**
 
 Double-point crossover is very similar in concept to single-point, but two crossover points are chosen. 
 
-Parent C: (**11**01**10**)
+* Parent C: (**11**01**10**) and Parent B: (01**10**00)
 
-Parent B: (01**10**00)
+* Child 1: (**111010**) and Child 2: (010100)
 
-Child 1: (**111010**)
-
-Child 2: (010100)
-
-## Mutation 
+### Mutation 
 
 Mutation happens after parent breeding. Each gene/bit has an independent probability of mutating (set by the user via `mut_rate`). 
 
-For example, take child 1 from above and let mutation flip gene 1: 
+For example, take child 1 from above and let mutation flip gene 1: (1**1**0000) $\to$ (1**0**0000)
 
-(1**1**0000) $\to$ (1**0**0000)
-
-## Ending 
+### Ending 
 
 This process is continued over however many generations have been specified via `n_gen`.
 
-# Team member contributions 
+## Team member contributions 
 
 * **Ricardo Castillo:** Ricardo completed the first version of the minimally functioning code for the genetic algorithm. He also helped some with the README documentation. 
 

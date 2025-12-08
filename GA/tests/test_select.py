@@ -25,6 +25,7 @@ def test_req_args():
     assert "pop_size" in sig.parameters
     assert "n_gen" in sig.parameters
 
+
 #########################################################
 # Additional tests for select function outputs
 #########################################################
