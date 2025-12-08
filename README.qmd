@@ -39,6 +39,8 @@ A dictionary containing:
 
 * "R2pen": penalized cross-validated $R^2$
 
+<br>
+
 ## Demonstrations 
 
 ```{python}
@@ -62,7 +64,7 @@ baseball_df = pd.read_csv("demo_datasets/baseball.dat", sep=r"\s+")
 print(baseball_df.head(6))
 ```
 
-We use the log of the salary variable as the response variable. And then we rescale the remaining predictor variables.  
+We use the log of the salary variable as the response variable. And we rescale the remaining predictor variables.  
 
 ```{python}
 y_baseball = np.log(baseball_df["salary"])          
@@ -72,7 +74,7 @@ X_scaled = StandardScaler().fit_transform(X_baseball)
 
 <br>
 
-**Linear vs. Lasso regression:**
+**Linear vs. lasso regression:**
 
 First, we run the genetic algorithm using a linear regression model and a small penalty. 
 
@@ -85,7 +87,7 @@ print(f"Cross-validated R^2: {result1["R2"]}")
 print(f"Penalized cross-validated R^2: {result1["R2pen"]}")
 ```
 
-Then, we run the genetic algorithm using a lasso regression and the same small penalty. We input our own dictionary of model parameters. We can see that lasso results in a similar $R^2$ as the linear but with fewer parameters, demonstrating the potential benefit of using lasso. 
+Then, we run the genetic algorithm using a lasso regression and the same small penalty. We input our own dictionary of model parameters. We can see that lasso results in a similar $R^2$ as the linear but with fewer parameters. This demonstrates the potential benefit of using lasso, which selects important predictors by shrinking unimportant coefficients to zero.
 
 ```{python}
 lasso_params = {
@@ -119,7 +121,7 @@ print(f"Cross-validated R^2: {result3["R2"]}")
 print(f"Penalized cross-validated R^2: {result3["R2pen"]}")
 ```
 
-Then, we change the parent_selection from the default "rank" to "tournament" and the crossover_type from the default "single" to "double". We can see that this run results a similar $R^2$ but with fewer parameters. This demonstrates that these parent selection and crossover methods help find the best predictors in fewer generations.
+Then, we change the parent_selection from the default "rank" to "tournament" and the crossover_type from the default "single" to "double". We (usually) see that this run results in a similar $R^2$ but with fewer parameters. This demonstrates that these parent selection and crossover methods can help find the best predictors in fewer generations. This makes sense because, for example, tournament selection applies more selective pressure than rank-based selection.
 
 ```{python}
 result4 = select(X=X_scaled, y=y_baseball, model_type="linear", 
@@ -158,7 +160,7 @@ print(f"Cross-validated R^2: {result5["R2"]}")
 print(f"Penalized cross-validated R^2: {result5["R2pen"]}")
 ```
 
-Then, we run the genetic algorithm using a decision tree regression. We can see that the decision tree results in a much better $R^2$. Although we still are not getting great performance here, this example demonstrates the usefulness of the more flexible decision tree regression. 
+Then, we run the genetic algorithm using a decision tree regression. We can see that the decision tree results in a much better $R^2$. Although we still are not getting great performance here, this example demonstrates the usefulness of the more flexible decision tree regression that can handle nonlinear relationships and potential interactions among predictors.
 
 ```{python}
 result6 = select(X=X_employee, y=y_employee, model_type="tree")
@@ -168,6 +170,8 @@ print(f"Selected variable indices: {result6["selected"]}")
 print(f"Cross-validated R^2: {result6["R2"]}")
 print(f"Penalized cross-validated R^2: {result6["R2pen"]}")
 ```
+
+<br> 
 
 ## Further details on input parameters
 
@@ -184,6 +188,8 @@ print(f"Penalized cross-validated R^2: {result6["R2pen"]}")
 * "tree": uses `DecisionTreeRegressor` from `sklearn.tree`
 
     * A decision tree regressor can handle nonlinear relationships and potential interactions among predictors.
+
+<br> 
 
 ### `model_params`
 
@@ -203,11 +209,15 @@ default_lasso = {
     "random_state": 42
 }
 
+<br> 
+
 ## Overview of the genetic algorithm 
 
 ### Setup
 
 We will use an example to help explain the genetic algorithm. Let's say we have 6 predictors and the population size (`pop_size`) is set to 4.  
+
+<br> 
 
 ### Generation 0
 
@@ -222,11 +232,13 @@ Since we have 6 predictors, each chromosome will have 6 genes/bits. And since th
 
 Then, for each individual, we fit a model (linear regression, lasso regression, or decision tree regression depending on `model_type`). For example, for individual A we would fit a model with predictors 0 and 3. 
 
-We calculate 10-fold cross-validated $R^2$. penalized $R^2$ is calculated as $R^2 - \lambda*f$, where $\lambda$ is determined by `penalty` and $f$ is the fraction of potential predictors that are selected. 
+We calculate 10-fold cross-validated $R^2$. Penalized $R^2$ is calculated as $R^2 - \lambda*f$, where $\lambda$ is determined by `penalty` and $f$ is the fraction of potential predictors that are selected. 
+
+<br> 
 
 ### Parent selection (`parent_selection`)
 
-**Rank-based selection**
+**Rank-based selection:**
 
 One parent is selected with probability proportional to rank. The other parent is selected purly at random. 
 
@@ -239,31 +251,35 @@ One parent is selected with probability proportional to rank. The other parent i
 
 <br>
 
-**Tournament selection**
+**Tournament selection:**
 
-The set of chromosomes in the generation are randomly partitioned into k groups. The best individual in each group is chosen as a parent. Games continue until a sifficient number of parents have been selected. Parents are then paried randomly for breeding. Tournament selection applies more selective pressure than rank-based selection. 
+The set of chromosomes in the generation are randomly partitioned into k groups. The best individual in each group is chosen as a parent. Games continue until a sufficient number of parents have been selected. Parents are then paried randomly for breeding. Tournament selection applies more selective pressure than rank-based selection. 
+
+<br> 
 
 ### Parent crossover (`crossover_type`)
 
-**Single-point crossover**
+**Single-point crossover:**
 
-For each pair of parents, a random position is selected to split the chromosomes. The left chromosome segment from one parent is glued to the right chromosome segment from the other parent to form a child. The remaining segments are combined to form a second child. 
+For each pair of the parents, a random position is selected to split the chromosomes. The left chromosome segment from one parent is glued to the right chromosome segment from the other parent to form a child. The remaining segments are combined to form a second child. 
 
-For example, if parents B and C have been paired for crossover and 3 is the random position selected:
+For example, if parents B and C have been paired and 3 is the random position selected:
 
-* Parent C: (**110**110) and Parent B: (011**000**)
+* Parent C: (**110***110*) and Parent B: (*011***000**)
 
-* Child 1: (**110000**) and Child 2: (011110)
+* Child 1: (**110000**) and Child 2: (*011110*)
 
 <br>
 
-**Double-point crossover**
+**Double-point crossover:**
 
 Double-point crossover is very similar in concept to single-point, but two crossover points are chosen. 
 
-* Parent C: (**11**01**10**) and Parent B: (01**10**00)
+* Parent C: (**11***01***10**) and Parent B: (*01***10***00*)
 
-* Child 1: (**111010**) and Child 2: (010100)
+* Child 1: (**111010**) and Child 2: (*010100*)
+
+<br> 
 
 ### Mutation 
 
@@ -271,14 +287,26 @@ Mutation happens after parent breeding. Each gene/bit has an independent probabi
 
 For example, take child 1 from above and let mutation flip gene 1: (1**1**0000) $\to$ (1**0**0000)
 
-### Ending 
+<br> 
+
+### Continue over generations 
 
 This process is continued over however many generations have been specified via `n_gen`.
 
+<br> 
+
+## Citation 
+
+This workflow comes from the concepts outline in: 
+
+Givens, G.H., & Hoeting, J.A. (2012). Computational statistics (2nd ed.). Wiley. (See Chapter 3: Combinatorial Optimization.)
+
+<br> 
+
 ## Team member contributions 
 
-* **Ricardo Castillo:** Ricardo completed the first version of the minimally functioning code for the genetic algorithm. He also helped some with the README documentation. 
+* **Ricardo Castillo:** Ricardo produced the first version of the minimal functioning code for the genetic algorithm. He also helped some with the README documentation. 
 
-* **Kea Rutherford:** Kea improved and vectorized the code from Ricardo and added additional functionality (such as additional model fitting methods and input validation). Kea wrote about half of the tests. She also wrote most of the final README document.  
+* **Kea Rutherford:** Kea improved and vectorized the code from Ricardo and added additional functionality (such as additional model fitting methods and validation of user inputs). Kea wrote about half of the tests. She also wrote most of the final README document.  
 
-* **Lyla Traylor:** Lyla found a couple more places to improve vectorization of the code. Lyla also added the Tournament selection and double-point crossover functionality. She wrote the other half of the tests. 
+* **Lyla Traylor:** Lyla found a couple more places to improve vectorization of the code. Lyla also added the tournament selection and double-point crossover functionality. She wrote the other half of the tests. 

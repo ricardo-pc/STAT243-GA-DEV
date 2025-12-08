@@ -52,6 +52,8 @@ A dictionary containing:
 
 -   “R2pen”: penalized cross-validated *R*<sup>2</sup>
 
+<br>
+
 ## Demonstrations
 
 ### Baseball example
@@ -90,8 +92,8 @@ print(baseball_df.head(6))
 
     [6 rows x 28 columns]
 
-We use the log of the salary variable as the response variable. And then
-we rescale the remaining predictor variables.
+We use the log of the salary variable as the response variable. And we
+rescale the remaining predictor variables.
 
 ``` python
 y_baseball = np.log(baseball_df["salary"])          
@@ -101,7 +103,7 @@ X_scaled = StandardScaler().fit_transform(X_baseball)
 
 <br>
 
-**Linear vs. Lasso regression:**
+**Linear vs. lasso regression:**
 
 First, we run the genetic algorithm using a linear regression model and
 a small penalty.
@@ -115,16 +117,17 @@ print(f"Cross-validated R^2: {result1["R2"]}")
 print(f"Penalized cross-validated R^2: {result1["R2pen"]}")
 ```
 
-    Number of selected variables: 9
-    Selected variable indices: [7, 8, 9, 12, 13, 17, 19, 21, 24]
-    Cross-validated R^2: 0.7882806111747256
-    Penalized cross-validated R^2: 0.7849472778413923
+    Number of selected variables: 11
+    Selected variable indices: [0, 2, 7, 9, 12, 13, 14, 15, 23, 24, 26]
+    Cross-validated R^2: 0.7814708832249216
+    Penalized cross-validated R^2: 0.7773968091508475
 
 Then, we run the genetic algorithm using a lasso regression and the same
 small penalty. We input our own dictionary of model parameters. We can
 see that lasso results in a similar *R*<sup>2</sup> as the linear but
-with fewer parameters, demonstrating the potential benefit of using
-lasso.
+with fewer parameters. This demonstrates the potential benefit of using
+lasso, which selects important predictors by shrinking unimportant
+coefficients to zero.
 
 ``` python
 lasso_params = {
@@ -145,8 +148,8 @@ print(f"Penalized cross-validated R^2: {result2["R2pen"]}")
 
     Number of selected variables: 4
     Selected variable indices: [3, 7, 12, 13]
-    Cross-validated R^2: 0.7520606459929903
-    Penalized cross-validated R^2: 0.7505791645115087
+    Cross-validated R^2: 0.7490525800136867
+    Penalized cross-validated R^2: 0.7475710985322052
 
 <br>
 
@@ -164,16 +167,18 @@ print(f"Cross-validated R^2: {result3["R2"]}")
 print(f"Penalized cross-validated R^2: {result3["R2pen"]}")
 ```
 
-    Number of selected variables: 13
-    Selected variable indices: [6, 7, 8, 9, 11, 12, 13, 15, 16, 17, 19, 21, 25]
-    Cross-validated R^2: 0.7841303736205689
-    Penalized cross-validated R^2: 0.7841303736205689
+    Number of selected variables: 14
+    Selected variable indices: [0, 2, 7, 9, 10, 12, 13, 14, 15, 19, 22, 24, 25, 26]
+    Cross-validated R^2: 0.7884846997732355
+    Penalized cross-validated R^2: 0.7884846997732355
 
 Then, we change the parent_selection from the default “rank” to
 “tournament” and the crossover_type from the default “single” to
-“double”. We can see that this run results a similar *R*<sup>2</sup> but
-with fewer parameters. This demonstrates that these parent selection and
-crossover methods help find the best predictors in fewer generations.
+“double”. We (usually) see that this run results in a similar
+*R*<sup>2</sup> but with fewer parameters. This demonstrates that these
+parent selection and crossover methods can help find the best predictors
+in fewer generations. This makes sense because, for example, tournament
+selection applies more selective pressure than rank-based selection.
 
 ``` python
 result4 = select(X=X_scaled, y=y_baseball, model_type="linear", 
@@ -185,10 +190,10 @@ print(f"Cross-validated R^2: {result4["R2"]}")
 print(f"Penalized cross-validated R^2: {result4["R2pen"]}")
 ```
 
-    Number of selected variables: 11
-    Selected variable indices: [1, 3, 5, 7, 8, 9, 10, 12, 13, 18, 23]
-    Cross-validated R^2: 0.7838049129022262
-    Penalized cross-validated R^2: 0.7838049129022262
+    Number of selected variables: 10
+    Selected variable indices: [2, 5, 7, 9, 12, 13, 14, 19, 21, 24]
+    Cross-validated R^2: 0.7862923160587727
+    Penalized cross-validated R^2: 0.7862923160587727
 
 ### Employee satisfaction example
 
@@ -232,16 +237,17 @@ print(f"Cross-validated R^2: {result5["R2"]}")
 print(f"Penalized cross-validated R^2: {result5["R2pen"]}")
 ```
 
-    Number of selected variables: 7
-    Selected variable indices: [0, 1, 2, 3, 4, 5, 6]
-    Cross-validated R^2: 0.061414422190377294
-    Penalized cross-validated R^2: 0.061414422190377294
+    Number of selected variables: 6
+    Selected variable indices: [0, 1, 3, 4, 5, 6]
+    Cross-validated R^2: 0.06116033942125687
+    Penalized cross-validated R^2: 0.06116033942125687
 
 Then, we run the genetic algorithm using a decision tree regression. We
 can see that the decision tree results in a much better *R*<sup>2</sup>.
 Although we still are not getting great performance here, this example
 demonstrates the usefulness of the more flexible decision tree
-regression.
+regression that can handle nonlinear relationships and potential
+interactions among predictors.
 
 ``` python
 result6 = select(X=X_employee, y=y_employee, model_type="tree")
@@ -252,10 +258,12 @@ print(f"Cross-validated R^2: {result6["R2"]}")
 print(f"Penalized cross-validated R^2: {result6["R2pen"]}")
 ```
 
-    Number of selected variables: 5
-    Selected variable indices: [0, 1, 2, 3, 6]
-    Cross-validated R^2: 0.4016492445161751
-    Penalized cross-validated R^2: 0.4016492445161751
+    Number of selected variables: 4
+    Selected variable indices: [0, 1, 2, 3]
+    Cross-validated R^2: 0.4026976873478969
+    Penalized cross-validated R^2: 0.4026976873478969
+
+<br>
 
 ## Further details on input parameters
 
@@ -275,6 +283,8 @@ print(f"Penalized cross-validated R^2: {result6["R2pen"]}")
     -   A decision tree regressor can handle nonlinear relationships and
         potential interactions among predictors.
 
+<br>
+
 ### `model_params`
 
 Default is None, indicating that the function will use the following
@@ -286,12 +296,16 @@ default_tree = { “max_depth”: 5, “min_samples_split”: 2,
 default_lasso = { “alpha”: 0.05, “max_iter”: 5000, “tol”: 1e-4,
 “random_state”: 42 }
 
+<br>
+
 ## Overview of the genetic algorithm
 
 ### Setup
 
 We will use an example to help explain the genetic algorithm. Let’s say
 we have 6 predictors and the population size (`pop_size`) is set to 4.
+
+<br>
 
 ### Generation 0
 
@@ -336,14 +350,16 @@ Then, for each individual, we fit a model (linear regression, lasso
 regression, or decision tree regression depending on `model_type`). For
 example, for individual A we would fit a model with predictors 0 and 3.
 
-We calculate 10-fold cross-validated *R*<sup>2</sup>. penalized
+We calculate 10-fold cross-validated *R*<sup>2</sup>. Penalized
 *R*<sup>2</sup> is calculated as *R*<sup>2</sup> − *λ* \* *f*, where *λ*
 is determined by `penalty` and *f* is the fraction of potential
 predictors that are selected.
 
+<br>
+
 ### Parent selection (`parent_selection`)
 
-**Rank-based selection**
+**Rank-based selection:**
 
 One parent is selected with probability proportional to rank. The other
 parent is selected purly at random.
@@ -387,40 +403,44 @@ parent is selected purly at random.
 
 <br>
 
-**Tournament selection**
+**Tournament selection:**
 
 The set of chromosomes in the generation are randomly partitioned into k
 groups. The best individual in each group is chosen as a parent. Games
-continue until a sifficient number of parents have been selected.
+continue until a sufficient number of parents have been selected.
 Parents are then paried randomly for breeding. Tournament selection
 applies more selective pressure than rank-based selection.
 
+<br>
+
 ### Parent crossover (`crossover_type`)
 
-**Single-point crossover**
+**Single-point crossover:**
 
-For each pair of parents, a random position is selected to split the
+For each pair of the parents, a random position is selected to split the
 chromosomes. The left chromosome segment from one parent is glued to the
 right chromosome segment from the other parent to form a child. The
 remaining segments are combined to form a second child.
 
-For example, if parents B and C have been paired for crossover and 3 is
-the random position selected:
+For example, if parents B and C have been paired and 3 is the random
+position selected:
 
--   Parent C: (**110**110) and Parent B: (011**000**)
+-   Parent C: (**110***110*) and Parent B: (*011***000**)
 
--   Child 1: (**110000**) and Child 2: (011110)
+-   Child 1: (**110000**) and Child 2: (*011110*)
 
 <br>
 
-**Double-point crossover**
+**Double-point crossover:**
 
 Double-point crossover is very similar in concept to single-point, but
 two crossover points are chosen.
 
--   Parent C: (**11**01**10**) and Parent B: (01**10**00)
+-   Parent C: (**11***01***10**) and Parent B: (*01***10***00*)
 
--   Child 1: (**111010**) and Child 2: (010100)
+-   Child 1: (**111010**) and Child 2: (*010100*)
+
+<br>
 
 ### Mutation
 
@@ -430,23 +450,36 @@ probability of mutating (set by the user via `mut_rate`).
 For example, take child 1 from above and let mutation flip gene 1:
 (1**1**0000) → (1**0**0000)
 
-### Ending
+<br>
+
+### Continue over generations
 
 This process is continued over however many generations have been
 specified via `n_gen`.
 
+<br>
+
+## Citation
+
+This workflow comes from the concepts outline in:
+
+Givens, G.H., & Hoeting, J.A. (2012). Computational statistics (2nd
+ed.). Wiley. (See Chapter 3: Combinatorial Optimization.)
+
+<br>
+
 ## Team member contributions
 
--   **Ricardo Castillo:** Ricardo completed the first version of the
-    minimally functioning code for the genetic algorithm. He also helped
+-   **Ricardo Castillo:** Ricardo produced the first version of the
+    minimal functioning code for the genetic algorithm. He also helped
     some with the README documentation.
 
 -   **Kea Rutherford:** Kea improved and vectorized the code from
     Ricardo and added additional functionality (such as additional model
-    fitting methods and input validation). Kea wrote about half of the
-    tests. She also wrote most of the final README document.
+    fitting methods and validation of user inputs). Kea wrote about half
+    of the tests. She also wrote most of the final README document.
 
 -   **Lyla Traylor:** Lyla found a couple more places to improve
-    vectorization of the code. Lyla also added the Tournament selection
+    vectorization of the code. Lyla also added the tournament selection
     and double-point crossover functionality. She wrote the other half
     of the tests.
