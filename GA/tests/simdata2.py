@@ -1,32 +1,38 @@
 import numpy as np
 
 # ====================================================
-# Simulate data with non-linear relationships
-# to test GA with decision tree model
+# simulate data with nonlinear relationships to be able to 
+# test the results from the GA algorithm on a known truth 
 # ====================================================
-np.random.seed(123)
+np.random.seed(42)
 n = 500
 p = 10
 
 # Generate predictors
 X_sim2 = np.random.normal(size=(n, p))
 
-# Create non-linear relationships with predictors 1, 4, and 6
-# Predictor 1: quadratic effect
-# Predictor 4: interaction-like (combines with itself non-linearly)
-# Predictor 6: threshold effect
-y_sim2 = (
-    2.0 * X_sim2[:, 1]**2 +           # Quadratic
-    1.5 * np.abs(X_sim2[:, 4]) +      # Absolute value (non-linear)
-    1.0 * (X_sim2[:, 6] > 0) +        # Threshold/step function
-    np.random.normal(scale=0.5, size=n)
+# Assign non-zero coefficients to only 3 predictors 
+beta_nonlin = np.zeros(p)
+beta_nonlin[1] = 2.0
+beta_nonlin[4] = -3.5 
+beta_nonlin[7] = 1.5 
+
+# True predictors
+true_preds_sim2 = [1, 4, 7]
+
+# Add some noise 
+sigma = 3.0
+
+# Construct nonlinear signal part
+signal = (
+    beta_nonlin[1] * X_sim2[:, 1]**2 +
+    beta_nonlin[4] * X_sim2[:, 4]**3 +
+    beta_nonlin[7] * X_sim2[:, 7]**2
 )
 
-# noise
-sigma = 0.5
+eps = np.random.normal(scale=sigma, size=n)
+y_sim2 = signal + eps
 
-true_predictors_sim2 = [1, 4, 6]
-
-# Approximate R^2
-signal_var = np.var(y_sim2 - np.random.normal(scale=0.5, size=n))
-R2_sim2 = signal_var / (signal_var + sigma**2)
+# Theoretical R^2
+signal_var = np.var(signal)
+R2_sim2 = signal_var/(signal_var + sigma**2)

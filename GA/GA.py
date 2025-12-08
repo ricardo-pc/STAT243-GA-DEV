@@ -6,12 +6,13 @@ from sklearn.model_selection import KFold
 from sklearn.linear_model import LinearRegression, Lasso
 from sklearn.tree import DecisionTreeRegressor
 
-def select(X, y, parent_selection="rank", crossover_type="single", pred_names=None, penalty=None, 
+def select(X, y, parent_selection="rank", crossover_type="single", penalty=None, 
     model_type="linear", model_params=None, pop_size=None, n_gen=100, mut_rate=0.01):
-    """Genetic Algorithm for variable selection.
+    """
+    Genetic Algorithm for variable selection.
 
     This function uses a genetic algorithm to do variable selection.
-    The fitness metric is cross-validated R^2.
+    The fitness metric is 10-fold cross-validated R^2.
 
     Parameters
     ----------
@@ -19,8 +20,10 @@ def select(X, y, parent_selection="rank", crossover_type="single", pred_names=No
         Predictor matrix (n samples by p predictors)
     y: numpy array or pandas DataFrame
         Response vector (length n samples)
-    pred_names: list
-        Optional input. Names of predictors. If None, generic names based on indexing are created.
+    parent_selection: str
+        "rank" (for rank-based selection of parents, default) or "tournament" (for tournament style selection of parents)
+    crossover_type: str
+        "single" (for single crossover point, default), or "double" (for double crossover point)
     penalty: float
         Must be between 0 and 1. Complexity penalty. Default is None.
     model_type: str
@@ -33,29 +36,32 @@ def select(X, y, parent_selection="rank", crossover_type="single", pred_names=No
         Must be > 1. Number of generations. Default is 100. 
     mut_rate: float 
         Must be between 0 and 1. Mutation rate. Default is 0.01 (1%).
-    parent_selection: str
-        "rank" (for rank-based selection of parents), or "tournament" (for tournament style selciton of parents)
-    crossover_type: str
-        "single" (for single crossover point, default), or "double" (for double crossover point)
 
     Returns
     -------
     result: dict
-        A dictonary with: selected (index of best predictors), selected_names (names of best predictors), R2 (R^2 value of best model), R2pen (penalized R^2 value)
+        A dictionary with: selected (index of best predictors), R2 (R^2 value of best model), R2pen (penalized R^2 value)
+
+    Examples
+    --------
+    >>> from sklearn.datasets import load_diabetes
+    >>> X_diab, y_diab = load_diabetes(return_X_y=True, as_frame=True)
+    >>> result = select(X_diab, y_diab, penalty=0.01)
+    >>> result["selected"]  # list of selected predictor indices
+    ...
+    >>> result["R2"] # cross-validated R^2 value
+    ...
+    >>> result["R2pen"] # penalized R^2 value 
+    ...
     """
     # check that inputs are formatted as expected 
-    _validate_inputs(X, y, pred_names, penalty, model_type, model_params, pop_size, n_gen, mut_rate)
+    _validate_inputs(X, y, parent_selection, crossover_type, penalty, model_type, 
+                     model_params, pop_size, n_gen, mut_rate)
 
     X = np.asarray(X)
     y = np.asarray(y).reshape(-1)
 
     n, p = X.shape
-
-    # If user doesn't pass predictor names, create generic ones
-    if pred_names is None:
-        pred_names = [f"x{j}" for j in range(p)]
-    else:
-        pred_names = list(pred_names)
 
     # If user doesn't pass P, set P to be ~1.5*p 
     # (where p is chromosome length)
@@ -79,11 +85,9 @@ def select(X, y, parent_selection="rank", crossover_type="single", pred_names=No
         R2 = float(best_aux)
 
     selected = np.flatnonzero(best_chrom).tolist()
-    selected_names = [pred_names[j] for j in selected]
 
     result = {
         "selected": selected,
-        "selected_names": selected_names,
         "R2": R2,
         "R2pen": R2pen
     }
@@ -91,45 +95,62 @@ def select(X, y, parent_selection="rank", crossover_type="single", pred_names=No
     return result
 
 
-def _validate_inputs(X, y, pred_names, penalty, model_type, model_params, pop_size, n_gen, mut_rate):
+def _validate_inputs(X, y, parent_selection, crossover_type, penalty, 
+                     model_type, model_params, pop_size, n_gen, mut_rate):
     """
     Check for expected input types.
     """
-    # X input
+    # X input ########################################
     if not isinstance(X, (np.ndarray, pd.DataFrame)):
         raise TypeError("X must be a numpy array or pandas DataFrame")
     
     if X.ndim != 2:
-        raise ValueError("X must be a 2-dimensional matrix")
+        raise ValueError("X must be 2-dimensional")
 
-    if X.shape[0] <= 1 or X.shape[1] <= 1:
-        raise ValueError("X must have more than 1 row and more than 1 column")
+    # required minimum for 10-fold CV and double crossover 
+    if X.shape[0] < 10 or X.shape[1] < 3:
+        raise ValueError("X must have at least 10 rows and at least 3 columns")
+    
+    # Check for missing values in X
+    if isinstance(X, pd.DataFrame):
+        if X.isnull().any().any():
+            raise ValueError("X contains missing values")
 
-    # y input
-    if not isinstance(y, (np.ndarray, pd.Series, pd.DataFrame)):
-        raise TypeError("y must be a numpy array or pandas Series/DataFrame")
+    if isinstance(X, np.ndarray):
+        if np.isnan(X).any():
+            raise ValueError("X contains missing values")
 
-    if isinstance(y, pd.DataFrame) and y.shape[1] != 1:
-        raise ValueError("y must have exactly one column")
+    # y input ########################################
+    if not isinstance(y, (np.ndarray, pd.Series)):
+        raise TypeError("y must be a numpy array or pandas Series")
 
-    if isinstance(y, (np.ndarray, pd.Series)) and y.ndim != 1:
+    if isinstance(y, np.ndarray) and y.ndim != 1:
         raise ValueError("y must be 1-dimensional")
+    
+    # Check for missing values in y
+    if isinstance(y, pd.Series):
+        if y.isnull().any():
+            raise ValueError("y contains missing values")
+
+    if isinstance(y, np.ndarray):
+        if np.isnan(y).any():
+            raise ValueError("y contains missing values")
 
     # X and y must have same length
     if X.shape[0] != len(y):
-        raise ValueError("X and y must have the same number of rows")
+        raise ValueError("X and y must have the same number of observations")
 
-    # pred_names input 
-    if pred_names is not None:
-        if not isinstance(pred_names, list):
-            raise TypeError("pred_names must be a list")
+    # parent_selection input ##########################
+    valid_parents = {"rank", "tournament"}
+    if parent_selection not in valid_parents:
+        raise ValueError('parent_selection must be one of: "rank" or "tournament"')
     
-        if len(pred_names) != X.shape[1]:
-            raise ValueError(
-                f"pred_names must have length {X.shape[1]} to match the number of predictors in X"
-            )
+    # crossover_type input ############################
+    valid_crossover = {"single", "double"}
+    if crossover_type not in valid_crossover:
+        raise ValueError('crossover_type must be one of: "single" or "double"')
 
-    # penalty and mut_rate inputs 
+    # penalty and mut_rate inputs #####################
     if penalty is not None:
         if not isinstance(penalty, float):
             raise TypeError("penalty must be a float")
@@ -143,7 +164,7 @@ def _validate_inputs(X, y, pred_names, penalty, model_type, model_params, pop_si
     if mut_rate > 0.1:
         warnings.warn("mut_rate > 0.1 is very high", RuntimeWarning)
 
-    # P and G inputs
+    # pop_size and n_gen inputs #####################
     if pop_size is not None:
         if not isinstance(pop_size, int):
             raise TypeError("pop_size must be an integer")
@@ -155,12 +176,12 @@ def _validate_inputs(X, y, pred_names, penalty, model_type, model_params, pop_si
     if n_gen <= 1:
         raise ValueError("n_gen must be greater than 1")
 
-    # model_type input
+    # model_type input ############################
     valid_models = {"linear", "tree", "lasso"}
     if model_type not in valid_models:
         raise ValueError('model_type must be one of: "linear", "lasso", or "tree"')
 
-    # model_params input
+    # model_params input ###########################
     if model_params is not None and not isinstance(model_params, dict):
         raise TypeError("model_params must be a dict")
 
@@ -242,7 +263,7 @@ def _compute_fitness(gen, X, y, penalty, model_type, model_params, SST, folds):
     }
 
     default_lasso = {
-        "alpha": 0.001,
+        "alpha": 0.05,
         "max_iter": 5000,
         "tol": 1e-4,
         "random_state": 42
@@ -332,17 +353,12 @@ def _select_parents(gen, fitness, parent_selection, P):
     num_parents_needed = P + (P % 2)
     pairs = num_parents_needed // 2
 
-    if parent_selection != "tournament":
-        # Fitness-based selection
-        if parent_selection == "fitness":
-            selection_prob = fitness/fitness.sum()
-
-        # Rank-based selection
-        elif parent_selection == "rank":
-            idx_sorted = np.argsort(fitness)
-            ranks = np.empty(P, float)
-            ranks[idx_sorted] = np.arange(1, P+1)
-            selection_prob = ranks/ranks.sum()
+    # Rank-based selection
+    if parent_selection == "rank":
+        idx_sorted = np.argsort(fitness)
+        ranks = np.empty(P, float)
+        ranks[idx_sorted] = np.arange(1, P+1)
+        selection_prob = ranks/ranks.sum()
 
         parent1_idx = np.random.choice(P, size=pairs, p=selection_prob)
         parent2_idx = np.random.randint(0, P, size=pairs)

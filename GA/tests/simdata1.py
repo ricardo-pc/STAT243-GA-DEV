@@ -1,7 +1,7 @@
 import numpy as np
 
 # ====================================================
-# simulate a data to be able to test the results from 
+# simulate data to be able to test the results from 
 # the GA algorithm on a known truth 
 # ====================================================
 np.random.seed(42)
@@ -16,9 +16,13 @@ beta = np.zeros(p)
 beta[0] = 2.0
 beta[3] = -1.5
 beta[7] = 1.5
+beta[10] = 1.5
+
+# True predictors
+true_preds_sim1 = [0, 3, 7, 10]
 
 # Add some noise
-sigma = 0.5
+sigma = 0.25
 
 # Generate response
 eps = np.random.normal(scale=sigma, size=n)

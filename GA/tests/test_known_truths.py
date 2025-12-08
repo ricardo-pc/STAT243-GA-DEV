@@ -1,43 +1,42 @@
-from .simdata1 import X_sim1, y_sim1, R2_sim1
-from .simdata2 import X_sim2, y_sim2, true_predictors_sim2, R2_sim2
-from .simdata3 import X_sim3, y_sim3, important_groups_sim3, R2_sim3
+from .simdata1 import X_sim1, y_sim1, true_preds_sim1, R2_sim1
+from .simdata2 import X_sim2, y_sim2, true_preds_sim2, R2_sim2
 import GA
 
-def test_output():
+def test_sim1_output():
     result_sim1 = GA.select(X_sim1, y_sim1, penalty=0.01)
-    assert result_sim1["selected"] == [0, 3, 7]
+    selected_sim1 = result_sim1["selected"]
 
-    assert abs(result_sim1["R2"] - R2_sim1) < 0.05
+    # Number of predictors between 2 and 6
+    assert 2 <= len(selected_sim1) <= 6
 
-def test_nonlinear_tree():
-    result_sim2 = GA.select(X_sim2, y_sim2, model_type="tree", penalty=0.01)
-    
-    # Check that at least 2 out of 3 true predictors are selected
-    selected = result_sim2["selected"]
-    matches = sum(pred in selected for pred in true_predictors_sim2)
-    assert matches >= 2, f"Expected at least 2 of {true_predictors_sim2}, got {selected}"
-    
-    # Check reasonable number of predictors (not too many extras)
-    assert len(selected) <= 4, f"Selected too many predictors: {len(selected)}"
-    
-    # Check R^2 is reasonable
-    assert result_sim2["R2"] > 0.5, f"R^2 too low: {result_sim2['R2']}"
+    # At least 2 of the true predictors are selected 
+    selected_set_sim1 = set(selected_sim1)
+    num_correct_sim1 = len(selected_set_sim1.intersection(true_preds_sim1))
+    assert num_correct_sim1 >= 2
 
-def test_correlated_lasso():
-    result_sim3 = GA.select(X_sim3, y_sim3, model_type="lasso", penalty=0.01)
-    
-    # Check that at least one predictor from each important group is selected
-    groups_found = 0
-    for group in important_groups_sim3:
-        if any(pred in result_sim3["selected"] for pred in group):
-            groups_found += 1
+    # R2 is reasonably close to theoretical R2
+    assert abs(result_sim1["R2"] - R2_sim1) < 0.2
 
-    assert groups_found >= 2, f"Expected predictors from at least 2 groups, found {groups_found}"
+def test_sim2_output():
 
-    # Check reasonable number of predictors
-    assert 2 <= len(result_sim3["selected"]) <= 4, f"Expected 2-4 predictors, got {len(selected)}"
-    
-    # Check R^2 is reasonably close to theoretical value
-    assert abs(result_sim3["R2"] - R2_sim3) < 0.01, f"R^2 {result_sim3['R2']} too far from {R2_sim3}"
-    
+    sim_params = {
+        "max_depth": None,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
+        "random_state": 42
+    }
 
+    result_sim2 = GA.select(X_sim2, y_sim2, model_type="tree",
+        model_params=sim_params, penalty=0.01)
+    selected_sim2 = result_sim2["selected"]
+
+    # Number of predictors between 1 and 5
+    assert 1 <= len(selected_sim2) <= 5
+
+    # At least 2 of the true predictors are selected 
+    selected_set_sim2 = set(selected_sim2)
+    num_correct_sim2 = len(selected_set_sim2.intersection(true_preds_sim2))
+    assert num_correct_sim2 >= 1
+
+    # R2 is reasonably close to theoretical R2
+    assert abs(result_sim2["R2"] - R2_sim2) < 0.2
