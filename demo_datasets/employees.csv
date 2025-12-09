@@ -1,4 +1,4 @@
-satisfaction_level,last_evaluation,number_projects,avg_montly_hours,time_at_company,work_accident,promotion_last_5years,high_salary
+sat_level,last_eval,number_projects,avg_monthly_hours,time_at_company,work_accident,promo_last_5years,high_salary
 0.38,0.53,2.0,157.0,3.0,0.0,0.0,0.0
 0.8,0.86,5.0,262.0,6.0,0.0,0.0,0.0
 0.11,0.88,7.0,272.0,4.0,0.0,0.0,0.0

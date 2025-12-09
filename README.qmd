@@ -139,7 +139,17 @@ Here we apply the genetic algorithm to a variable selection problem for employee
 
 ```{python}
 #| include: false
-employee_df = pd.read_csv("demo_datasets/employees.csv")
+employee_df = pd.read_csv(
+    "demo_datasets/employees.csv",
+    dtype={
+        "number_projects": "int",
+        "avg_monthly_hours": "int",
+        "time_at_company": "int",
+        "work_accident": "int",
+        "promo_last_5years": "int",
+        "high_salary": "int"
+    }
+)
 ```
 
 ```{python}
@@ -149,8 +159,8 @@ print(employee_df.head(6))
 First, we run the genetic algorithm using a linear regression model and all other settings as default. The linear regression results in a terrible $R^2$. 
 
 ```{python}
-y_employee = employee_df["satisfaction_level"]
-X_employee = employee_df.drop(columns=["satisfaction_level"])
+y_employee = employee_df["sat_level"]
+X_employee = employee_df.drop(columns=["sat_level"])
 
 result5 = select(X=X_employee, y=y_employee)
 
@@ -189,8 +199,6 @@ print(f"Penalized cross-validated R^2: {result6["R2pen"]}")
 
     * A decision tree regressor can handle nonlinear relationships and potential interactions among predictors.
 
-<br> 
-
 ### `model_params`
 
 Default is None, indicating that the function will use the following settings:
@@ -217,8 +225,6 @@ default_lasso = {
 
 We will use an example to help explain the genetic algorithm. Let's say we have 6 predictors and the population size (`pop_size`) is set to 4.  
 
-<br> 
-
 ### Generation 0
 
 Since we have 6 predictors, each chromosome will have 6 genes/bits. And since the population size was set to 4 we will have 4 individuals in each generation. For the starting population, the chromosomes for each individual are selected purly at random.  
@@ -233,8 +239,6 @@ Since we have 6 predictors, each chromosome will have 6 genes/bits. And since th
 Then, for each individual, we fit a model (linear regression, lasso regression, or decision tree regression depending on `model_type`). For example, for individual A we would fit a model with predictors 0 and 3. 
 
 We calculate 10-fold cross-validated $R^2$. Penalized $R^2$ is calculated as $R^2 - \lambda*f$, where $\lambda$ is determined by `penalty` and $f$ is the fraction of potential predictors that are selected. 
-
-<br> 
 
 ### Parent selection (`parent_selection`)
 
@@ -255,8 +259,6 @@ One parent is selected with probability proportional to rank. The other parent i
 
 The set of chromosomes in the generation are randomly partitioned into k groups. The best individual in each group is chosen as a parent. Games continue until a sufficient number of parents have been selected. Parents are then paried randomly for breeding. Tournament selection applies more selective pressure than rank-based selection. 
 
-<br> 
-
 ### Parent crossover (`crossover_type`)
 
 **Single-point crossover:**
@@ -265,9 +267,9 @@ For each pair of the parents, a random position is selected to split the chromos
 
 For example, if parents B and C have been paired and 3 is the random position selected:
 
-* Parent C: (**110***110*) and Parent B: (*011***000**)
+* Parent C: (**110**110) and Parent B: (011**000**)
 
-* Child 1: (**110000**) and Child 2: (*011110*)
+* Child 1: (**110000**) and Child 2: (011110)
 
 <br>
 
@@ -275,11 +277,9 @@ For example, if parents B and C have been paired and 3 is the random position se
 
 Double-point crossover is very similar in concept to single-point, but two crossover points are chosen. 
 
-* Parent C: (**11***01***10**) and Parent B: (*01***10***00*)
+* Parent C: (**11**01**10**) and Parent B: (01**10**00)
 
-* Child 1: (**111010**) and Child 2: (*010100*)
-
-<br> 
+* Child 1: (**111010**) and Child 2: (010100)
 
 ### Mutation 
 
@@ -287,19 +287,27 @@ Mutation happens after parent breeding. Each gene/bit has an independent probabi
 
 For example, take child 1 from above and let mutation flip gene 1: (1**1**0000) $\to$ (1**0**0000)
 
-<br> 
-
 ### Continue over generations 
 
 This process is continued over however many generations have been specified via `n_gen`.
 
 <br> 
 
-## Citation 
+## Citations and attributions  
 
-This workflow comes from the concepts outline in: 
+This workflow comes from the concepts outlined in:  
 
 Givens, G.H., & Hoeting, J.A. (2012). Computational statistics (2nd ed.). Wiley. (See Chapter 3: Combinatorial Optimization.)
+
+The employee satisfaction example data comes from:
+
+Employee Satisfaction Survey Dataset. Kaggle. Available at: https://www.kaggle.com/datasets/redpen12/employees-satisfaction-analysis (accessed Dec. 5, 2025). 
+
+We used Claude and GitHub Copilot to help locate difficult bugs in our code. We also used them to help brainstorm ideas for how to vectorize certain pieces of the code. 
+
+Anthropic. (2025). Claude Opus 4.5 [Large language model]. https://claude.ai (used by Kea and Lyla)
+
+GitHub. (2025). GitHub Copilot for Visual Studio Code [AI code-generation extension]. https://marketplace.visualstudio.com/items?itemName=GitHub.copilot (used by Ricardo)
 
 <br> 
 
@@ -309,4 +317,4 @@ Givens, G.H., & Hoeting, J.A. (2012). Computational statistics (2nd ed.). Wiley.
 
 * **Kea Rutherford:** Kea improved and vectorized the code from Ricardo and added additional functionality (such as additional model fitting methods and validation of user inputs). Kea wrote about half of the tests. She also wrote most of the final README document.  
 
-* **Lyla Traylor:** Lyla found a couple more places to improve vectorization of the code. Lyla also added the tournament selection and double-point crossover functionality. She wrote the other half of the tests. 
+* **Lyla Traylor:** Lyla found one more place to improve vectorization of the code. Lyla also added the tournament selection and double-point crossover functionality. She wrote the other half of the tests. 

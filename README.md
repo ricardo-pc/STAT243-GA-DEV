@@ -117,10 +117,10 @@ print(f"Cross-validated R^2: {result1["R2"]}")
 print(f"Penalized cross-validated R^2: {result1["R2pen"]}")
 ```
 
-    Number of selected variables: 11
-    Selected variable indices: [0, 2, 7, 9, 12, 13, 14, 15, 23, 24, 26]
-    Cross-validated R^2: 0.7814708832249216
-    Penalized cross-validated R^2: 0.7773968091508475
+    Number of selected variables: 8
+    Selected variable indices: [3, 7, 10, 12, 13, 19, 23, 24]
+    Cross-validated R^2: 0.7838535259796429
+    Penalized cross-validated R^2: 0.7808905630166799
 
 Then, we run the genetic algorithm using a lasso regression and the same
 small penalty. We input our own dictionary of model parameters. We can
@@ -148,8 +148,8 @@ print(f"Penalized cross-validated R^2: {result2["R2pen"]}")
 
     Number of selected variables: 4
     Selected variable indices: [3, 7, 12, 13]
-    Cross-validated R^2: 0.7490525800136867
-    Penalized cross-validated R^2: 0.7475710985322052
+    Cross-validated R^2: 0.7517804345873721
+    Penalized cross-validated R^2: 0.7502989531058906
 
 <br>
 
@@ -167,10 +167,10 @@ print(f"Cross-validated R^2: {result3["R2"]}")
 print(f"Penalized cross-validated R^2: {result3["R2pen"]}")
 ```
 
-    Number of selected variables: 14
-    Selected variable indices: [0, 2, 7, 9, 10, 12, 13, 14, 15, 19, 22, 24, 25, 26]
-    Cross-validated R^2: 0.7884846997732355
-    Penalized cross-validated R^2: 0.7884846997732355
+    Number of selected variables: 16
+    Selected variable indices: [0, 1, 2, 3, 6, 8, 9, 12, 13, 14, 15, 16, 20, 21, 24, 25]
+    Cross-validated R^2: 0.7800549385787161
+    Penalized cross-validated R^2: 0.7800549385787161
 
 Then, we change the parent_selection from the default “rank” to
 “tournament” and the crossover_type from the default “single” to
@@ -190,10 +190,10 @@ print(f"Cross-validated R^2: {result4["R2"]}")
 print(f"Penalized cross-validated R^2: {result4["R2pen"]}")
 ```
 
-    Number of selected variables: 10
-    Selected variable indices: [2, 5, 7, 9, 12, 13, 14, 19, 21, 24]
-    Cross-validated R^2: 0.7862923160587727
-    Penalized cross-validated R^2: 0.7862923160587727
+    Number of selected variables: 8
+    Selected variable indices: [3, 5, 7, 10, 12, 13, 23, 24]
+    Cross-validated R^2: 0.7853355841154916
+    Penalized cross-validated R^2: 0.7853355841154916
 
 ### Employee satisfaction example
 
@@ -205,29 +205,29 @@ to predict satisfaction level.
 print(employee_df.head(6))
 ```
 
-       satisfaction_level  last_evaluation  number_projects  avg_montly_hours  \
-    0                0.38             0.53              2.0             157.0   
-    1                0.80             0.86              5.0             262.0   
-    2                0.11             0.88              7.0             272.0   
-    3                0.72             0.87              5.0             223.0   
-    4                0.37             0.52              2.0             159.0   
-    5                0.41             0.50              2.0             153.0   
+       sat_level  last_eval  number_projects  avg_monthly_hours  time_at_company  \
+    0       0.38       0.53                2                157                3   
+    1       0.80       0.86                5                262                6   
+    2       0.11       0.88                7                272                4   
+    3       0.72       0.87                5                223                5   
+    4       0.37       0.52                2                159                3   
+    5       0.41       0.50                2                153                3   
 
-       time_at_company  work_accident  promotion_last_5years  high_salary  
-    0              3.0            0.0                    0.0          0.0  
-    1              6.0            0.0                    0.0          0.0  
-    2              4.0            0.0                    0.0          0.0  
-    3              5.0            0.0                    0.0          0.0  
-    4              3.0            0.0                    0.0          0.0  
-    5              3.0            0.0                    0.0          0.0  
+       work_accident  promo_last_5years  high_salary  
+    0              0                  0            0  
+    1              0                  0            0  
+    2              0                  0            0  
+    3              0                  0            0  
+    4              0                  0            0  
+    5              0                  0            0  
 
 First, we run the genetic algorithm using a linear regression model and
 all other settings as default. The linear regression results in a
 terrible *R*<sup>2</sup>.
 
 ``` python
-y_employee = employee_df["satisfaction_level"]
-X_employee = employee_df.drop(columns=["satisfaction_level"])
+y_employee = employee_df["sat_level"]
+X_employee = employee_df.drop(columns=["sat_level"])
 
 result5 = select(X=X_employee, y=y_employee)
 
@@ -237,10 +237,10 @@ print(f"Cross-validated R^2: {result5["R2"]}")
 print(f"Penalized cross-validated R^2: {result5["R2pen"]}")
 ```
 
-    Number of selected variables: 6
-    Selected variable indices: [0, 1, 3, 4, 5, 6]
-    Cross-validated R^2: 0.06116033942125687
-    Penalized cross-validated R^2: 0.06116033942125687
+    Number of selected variables: 7
+    Selected variable indices: [0, 1, 2, 3, 4, 5, 6]
+    Cross-validated R^2: 0.06133488711164714
+    Penalized cross-validated R^2: 0.06133488711164714
 
 Then, we run the genetic algorithm using a decision tree regression. We
 can see that the decision tree results in a much better *R*<sup>2</sup>.
@@ -260,8 +260,8 @@ print(f"Penalized cross-validated R^2: {result6["R2pen"]}")
 
     Number of selected variables: 4
     Selected variable indices: [0, 1, 2, 3]
-    Cross-validated R^2: 0.4026976873478969
-    Penalized cross-validated R^2: 0.4026976873478969
+    Cross-validated R^2: 0.4009003922323341
+    Penalized cross-validated R^2: 0.4009003922323341
 
 <br>
 
@@ -283,8 +283,6 @@ print(f"Penalized cross-validated R^2: {result6["R2pen"]}")
     -   A decision tree regressor can handle nonlinear relationships and
         potential interactions among predictors.
 
-<br>
-
 ### `model_params`
 
 Default is None, indicating that the function will use the following
@@ -304,8 +302,6 @@ default_lasso = { “alpha”: 0.05, “max_iter”: 5000, “tol”: 1e-4,
 
 We will use an example to help explain the genetic algorithm. Let’s say
 we have 6 predictors and the population size (`pop_size`) is set to 4.
-
-<br>
 
 ### Generation 0
 
@@ -354,8 +350,6 @@ We calculate 10-fold cross-validated *R*<sup>2</sup>. Penalized
 *R*<sup>2</sup> is calculated as *R*<sup>2</sup> − *λ* \* *f*, where *λ*
 is determined by `penalty` and *f* is the fraction of potential
 predictors that are selected.
-
-<br>
 
 ### Parent selection (`parent_selection`)
 
@@ -411,8 +405,6 @@ continue until a sufficient number of parents have been selected.
 Parents are then paried randomly for breeding. Tournament selection
 applies more selective pressure than rank-based selection.
 
-<br>
-
 ### Parent crossover (`crossover_type`)
 
 **Single-point crossover:**
@@ -425,9 +417,9 @@ remaining segments are combined to form a second child.
 For example, if parents B and C have been paired and 3 is the random
 position selected:
 
--   Parent C: (**110***110*) and Parent B: (*011***000**)
+-   Parent C: (**110**110) and Parent B: (011**000**)
 
--   Child 1: (**110000**) and Child 2: (*011110*)
+-   Child 1: (**110000**) and Child 2: (011110)
 
 <br>
 
@@ -436,11 +428,9 @@ position selected:
 Double-point crossover is very similar in concept to single-point, but
 two crossover points are chosen.
 
--   Parent C: (**11***01***10**) and Parent B: (*01***10***00*)
+-   Parent C: (**11**01**10**) and Parent B: (01**10**00)
 
--   Child 1: (**111010**) and Child 2: (*010100*)
-
-<br>
+-   Child 1: (**111010**) and Child 2: (010100)
 
 ### Mutation
 
@@ -450,8 +440,6 @@ probability of mutating (set by the user via `mut_rate`).
 For example, take child 1 from above and let mutation flip gene 1:
 (1**1**0000) → (1**0**0000)
 
-<br>
-
 ### Continue over generations
 
 This process is continued over however many generations have been
@@ -459,12 +447,30 @@ specified via `n_gen`.
 
 <br>
 
-## Citation
+## Citations and attributions
 
-This workflow comes from the concepts outline in:
+This workflow comes from the concepts outlined in:
 
 Givens, G.H., & Hoeting, J.A. (2012). Computational statistics (2nd
 ed.). Wiley. (See Chapter 3: Combinatorial Optimization.)
+
+The employee satisfaction example data comes from:
+
+Employee Satisfaction Survey Dataset. Kaggle. Available at:
+https://www.kaggle.com/datasets/redpen12/employees-satisfaction-analysis
+(accessed Dec. 5, 2025).
+
+We used Claude and GitHub Copilot to help locate difficult bugs in our
+code. We also used them to help brainstorm ideas for how to vectorize
+certain pieces of the code.
+
+Anthropic. (2025). Claude Opus 4.5 \[Large language model\].
+https://claude.ai (used by Kea and Lyla)
+
+GitHub. (2025). GitHub Copilot for Visual Studio Code \[AI
+code-generation extension\].
+https://marketplace.visualstudio.com/items?itemName=GitHub.copilot (used
+by Ricardo)
 
 <br>
 
@@ -479,7 +485,7 @@ ed.). Wiley. (See Chapter 3: Combinatorial Optimization.)
     fitting methods and validation of user inputs). Kea wrote about half
     of the tests. She also wrote most of the final README document.
 
--   **Lyla Traylor:** Lyla found a couple more places to improve
-    vectorization of the code. Lyla also added the tournament selection
-    and double-point crossover functionality. She wrote the other half
-    of the tests.
+-   **Lyla Traylor:** Lyla found one more place to improve vectorization
+    of the code. Lyla also added the tournament selection and
+    double-point crossover functionality. She wrote the other half of
+    the tests.
