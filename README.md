@@ -118,10 +118,10 @@ print(f"Cross-validated R^2: {result1["R2"]}")
 print(f"Penalized cross-validated R^2: {result1["R2pen"]}")
 ```
 
-    Number of selected variables: 8
-    Selected variable array: [0 1 0 1 0 0 0 1 1 1 0 0 1 1 0 0 0 0 0 0 0 0 0 1 0 0 0]
-    Cross-validated R^2: 0.7830646156430003
-    Penalized cross-validated R^2: 0.7801016526800374
+    Number of selected variables: 9
+    Selected variable array: [0 0 1 0 0 1 0 1 0 1 0 0 1 1 0 0 0 0 0 1 0 1 0 0 0 0 1]
+    Cross-validated R^2: 0.7868190617453453
+    Penalized cross-validated R^2: 0.783485728412012
 
 Then, we run the genetic algorithm using a lasso regression and the same
 small penalty. We input our own dictionary of model parameters. We can
@@ -141,16 +141,16 @@ lasso_params = {
 result2 = select(X=X_scaled, y=y_baseball, model_type="lasso", 
     model_params=lasso_params, penalty=0.01)
 
-print(f"Number of selected variables: {np.array(result2["selected"])}")
+print(f"Number of selected variables: {np.sum(result2["selected"])}")
 print(f"Selected variable array: {result2["selected"]}")
 print(f"Cross-validated R^2: {result2["R2"]}")
 print(f"Penalized cross-validated R^2: {result2["R2pen"]}")
 ```
 
-    Number of selected variables: [0 0 0 1 0 0 0 1 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0]
+    Number of selected variables: 4
     Selected variable array: [0 0 0 1 0 0 0 1 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0]
-    Cross-validated R^2: 0.751914195347145
-    Penalized cross-validated R^2: 0.7504327138656635
+    Cross-validated R^2: 0.7513191904198551
+    Penalized cross-validated R^2: 0.7498377089383735
 
 <br>
 
@@ -168,10 +168,10 @@ print(f"Cross-validated R^2: {result3["R2"]}")
 print(f"Penalized cross-validated R^2: {result3["R2pen"]}")
 ```
 
-    Number of selected variables: 9
-    Selected variable array: [0 0 1 0 0 0 0 1 1 1 0 0 1 1 0 0 0 0 1 1 0 1 0 0 0 0 0]
-    Cross-validated R^2: 0.7830829291944871
-    Penalized cross-validated R^2: 0.7830829291944871
+    Number of selected variables: 15
+    Selected variable array: [1 0 1 0 1 1 0 0 0 1 0 1 1 1 1 1 1 1 0 0 0 1 0 0 1 0 1]
+    Cross-validated R^2: 0.7789480680551558
+    Penalized cross-validated R^2: 0.7789480680551558
 
 Then, we change the parent_selection from the default “rank” to
 “tournament” and the crossover_type from the default “single” to
@@ -191,10 +191,10 @@ print(f"Cross-validated R^2: {result4["R2"]}")
 print(f"Penalized cross-validated R^2: {result4["R2pen"]}")
 ```
 
-    Number of selected variables: 11
-    Selected variable array: [0 0 0 1 0 0 1 1 1 1 0 0 1 1 0 0 0 0 0 1 0 1 0 1 1 0 0]
-    Cross-validated R^2: 0.7863117732055431
-    Penalized cross-validated R^2: 0.7863117732055431
+    Number of selected variables: 12
+    Selected variable array: [1 0 0 0 0 0 0 1 1 1 0 0 1 1 0 1 1 1 1 0 0 0 0 1 0 0 1]
+    Cross-validated R^2: 0.7810113357468603
+    Penalized cross-validated R^2: 0.7810113357468603
 
 ### Employee satisfaction example
 
@@ -240,8 +240,8 @@ print(f"Penalized cross-validated R^2: {result5["R2pen"]}")
 
     Number of selected variables: 7
     Selected variable array: [1 1 1 1 1 1 1]
-    Cross-validated R^2: 0.061495914742748736
-    Penalized cross-validated R^2: 0.061495914742748736
+    Cross-validated R^2: 0.06126647502992211
+    Penalized cross-validated R^2: 0.06126647502992211
 
 Then, we run the genetic algorithm using a decision tree regression. We
 can see that the decision tree results in a much better *R*<sup>2</sup>.
@@ -261,8 +261,8 @@ print(f"Penalized cross-validated R^2: {result6["R2pen"]}")
 
     Number of selected variables: 5
     Selected variable array: [1 1 1 1 0 0 1]
-    Cross-validated R^2: 0.40340032350885213
-    Penalized cross-validated R^2: 0.40340032350885213
+    Cross-validated R^2: 0.39811469590539583
+    Penalized cross-validated R^2: 0.39811469590539583
 
 <br>
 
