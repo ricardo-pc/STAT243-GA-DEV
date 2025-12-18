@@ -46,7 +46,8 @@ an evolution inspired search process.
 
 A dictionary containing:
 
--   “selected”: indices of the selected variables (using 0 indexing).
+-   “selected”: numpy array of 1s (indicating selected variables) and 0s
+    (indicating variables not selected)
 
 -   “R2”: unpenalized cross-validated *R*<sup>2</sup>
 
@@ -111,16 +112,16 @@ a small penalty.
 ``` python
 result1 = select(X=X_scaled, y=y_baseball, model_type="linear", penalty=0.01)
 
-print(f"Number of selected variables: {len(result1["selected"])}")
-print(f"Selected variable indices: {result1["selected"]}")
+print(f"Number of selected variables: {np.sum(result1["selected"])}")
+print(f"Selected variable array: {result1["selected"]}")
 print(f"Cross-validated R^2: {result1["R2"]}")
 print(f"Penalized cross-validated R^2: {result1["R2pen"]}")
 ```
 
     Number of selected variables: 8
-    Selected variable indices: [3, 7, 10, 12, 13, 19, 23, 24]
-    Cross-validated R^2: 0.7838535259796429
-    Penalized cross-validated R^2: 0.7808905630166799
+    Selected variable array: [0 0 1 0 0 0 0 1 0 1 0 0 1 1 0 0 0 0 0 1 0 1 0 0 1 0 0]
+    Cross-validated R^2: 0.7851631854423505
+    Penalized cross-validated R^2: 0.7822002224793876
 
 Then, we run the genetic algorithm using a lasso regression and the same
 small penalty. We input our own dictionary of model parameters. We can
@@ -140,16 +141,16 @@ lasso_params = {
 result2 = select(X=X_scaled, y=y_baseball, model_type="lasso", 
     model_params=lasso_params, penalty=0.01)
 
-print(f"Number of selected variables: {len(result2["selected"])}")
-print(f"Selected variable indices: {result2["selected"]}")
+print(f"Number of selected variables: {np.array(result2["selected"])}")
+print(f"Selected variable array: {result2["selected"]}")
 print(f"Cross-validated R^2: {result2["R2"]}")
 print(f"Penalized cross-validated R^2: {result2["R2pen"]}")
 ```
 
-    Number of selected variables: 4
-    Selected variable indices: [3, 7, 12, 13]
-    Cross-validated R^2: 0.7517804345873721
-    Penalized cross-validated R^2: 0.7502989531058906
+    Number of selected variables: [0 0 0 1 0 0 0 1 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0]
+    Selected variable array: [0 0 0 1 0 0 0 1 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0]
+    Cross-validated R^2: 0.7532747163957894
+    Penalized cross-validated R^2: 0.7517932349143078
 
 <br>
 
@@ -161,16 +162,16 @@ we only use 30 generations (as opposed to the default 100).
 ``` python
 result3 = select(X=X_scaled, y=y_baseball, model_type="linear", n_gen=30)
 
-print(f"Number of selected variables: {len(result3["selected"])}")
-print(f"Selected variable indices: {result3["selected"]}")
+print(f"Number of selected variables: {np.array(result3["selected"])}")
+print(f"Selected variable array: {result3["selected"]}")
 print(f"Cross-validated R^2: {result3["R2"]}")
 print(f"Penalized cross-validated R^2: {result3["R2pen"]}")
 ```
 
-    Number of selected variables: 16
-    Selected variable indices: [0, 1, 2, 3, 6, 8, 9, 12, 13, 14, 15, 16, 20, 21, 24, 25]
-    Cross-validated R^2: 0.7800549385787161
-    Penalized cross-validated R^2: 0.7800549385787161
+    Number of selected variables: [1 0 1 1 0 1 1 1 1 0 1 0 1 1 1 1 1 1 0 0 0 0 0 1 1 1 0]
+    Selected variable array: [1 0 1 1 0 1 1 1 1 0 1 0 1 1 1 1 1 1 0 0 0 0 0 1 1 1 0]
+    Cross-validated R^2: 0.7880355973221376
+    Penalized cross-validated R^2: 0.7880355973221376
 
 Then, we change the parent_selection from the default “rank” to
 “tournament” and the crossover_type from the default “single” to
@@ -184,16 +185,16 @@ selection applies more selective pressure than rank-based selection.
 result4 = select(X=X_scaled, y=y_baseball, model_type="linear", 
     parent_selection="tournament", crossover_type="double", n_gen=30)
 
-print(f"Number of selected variables: {len(result4["selected"])}")
-print(f"Selected variable indices: {result4["selected"]}")
+print(f"Number of selected variables: {np.array(result4["selected"])}")
+print(f"Selected variable array: {result4["selected"]}")
 print(f"Cross-validated R^2: {result4["R2"]}")
 print(f"Penalized cross-validated R^2: {result4["R2pen"]}")
 ```
 
-    Number of selected variables: 8
-    Selected variable indices: [3, 5, 7, 10, 12, 13, 23, 24]
-    Cross-validated R^2: 0.7853355841154916
-    Penalized cross-validated R^2: 0.7853355841154916
+    Number of selected variables: [0 0 0 0 0 0 0 1 1 1 0 0 1 1 0 0 0 0 0 1 0 1 0 0 1 0 0]
+    Selected variable array: [0 0 0 0 0 0 0 1 1 1 0 0 1 1 0 0 0 0 0 1 0 1 0 0 1 0 0]
+    Cross-validated R^2: 0.7844628279791469
+    Penalized cross-validated R^2: 0.7844628279791469
 
 ### Employee satisfaction example
 
@@ -231,16 +232,16 @@ X_employee = employee_df.drop(columns=["sat_level"])
 
 result5 = select(X=X_employee, y=y_employee)
 
-print(f"Number of selected variables: {len(result5["selected"])}")
-print(f"Selected variable indices: {result5["selected"]}")
+print(f"Number of selected variables: {np.sum(result5["selected"])}")
+print(f"Selected variable array: {result5["selected"]}")
 print(f"Cross-validated R^2: {result5["R2"]}")
 print(f"Penalized cross-validated R^2: {result5["R2pen"]}")
 ```
 
     Number of selected variables: 7
-    Selected variable indices: [0, 1, 2, 3, 4, 5, 6]
-    Cross-validated R^2: 0.06133488711164714
-    Penalized cross-validated R^2: 0.06133488711164714
+    Selected variable array: [1 1 1 1 1 1 1]
+    Cross-validated R^2: 0.0613260234939218
+    Penalized cross-validated R^2: 0.0613260234939218
 
 Then, we run the genetic algorithm using a decision tree regression. We
 can see that the decision tree results in a much better *R*<sup>2</sup>.
@@ -252,16 +253,16 @@ interactions among predictors.
 ``` python
 result6 = select(X=X_employee, y=y_employee, model_type="tree")
 
-print(f"Number of selected variables: {len(result6["selected"])}")
-print(f"Selected variable indices: {result6["selected"]}")
+print(f"Number of selected variables: {np.sum(result6["selected"])}")
+print(f"Selected variable array: {result6["selected"]}")
 print(f"Cross-validated R^2: {result6["R2"]}")
 print(f"Penalized cross-validated R^2: {result6["R2pen"]}")
 ```
 
-    Number of selected variables: 4
-    Selected variable indices: [0, 1, 2, 3]
-    Cross-validated R^2: 0.4009003922323341
-    Penalized cross-validated R^2: 0.4009003922323341
+    Number of selected variables: 5
+    Selected variable array: [1 1 1 1 0 1 0]
+    Cross-validated R^2: 0.3990154818658316
+    Penalized cross-validated R^2: 0.3990154818658316
 
 <br>
 
@@ -451,26 +452,26 @@ specified via `n_gen`.
 
 This workflow comes from the concepts outlined in:
 
-Givens, G.H., & Hoeting, J.A. (2012). Computational statistics (2nd
-ed.). Wiley. (See Chapter 3: Combinatorial Optimization.)
+-   Givens, G.H., & Hoeting, J.A. (2012). Computational statistics (2nd
+    ed.). Wiley. (See Chapter 3: Combinatorial Optimization.)
 
 The employee satisfaction example data comes from:
 
-Employee Satisfaction Survey Dataset. Kaggle. Available at:
-https://www.kaggle.com/datasets/redpen12/employees-satisfaction-analysis
-(accessed Dec. 5, 2025).
+-   Employee Satisfaction Survey Dataset. Kaggle. Available at:
+    https://www.kaggle.com/datasets/redpen12/employees-satisfaction-analysis
+    (accessed Dec. 5, 2025).
 
-We used Claude and GitHub Copilot to help locate difficult bugs in our
-code. We also used them to help brainstorm ideas for how to vectorize
-certain pieces of the code.
+We used Claude and GitHub Copilot to help locate the source of difficult
+bugs in our code. We also used them to help brainstorm ideas for how to
+vectorize certain pieces of the code.
 
-Anthropic. (2025). Claude Opus 4.5 \[Large language model\].
-https://claude.ai (used by Kea and Lyla)
+-   Anthropic. (2025). Claude Opus 4.5 \[Large language model\].
+    https://claude.ai (used by Kea and Lyla)
 
-GitHub. (2025). GitHub Copilot for Visual Studio Code \[AI
-code-generation extension\].
-https://marketplace.visualstudio.com/items?itemName=GitHub.copilot (used
-by Ricardo)
+-   GitHub. (2025). GitHub Copilot for Visual Studio Code \[AI
+    code-generation extension\].
+    https://marketplace.visualstudio.com/items?itemName=GitHub.copilot
+    (used by Ricardo)
 
 <br>
 

@@ -1,5 +1,6 @@
 from .simdata1 import X_sim1, y_sim1, true_preds_sim1, R2_sim1
 from .simdata2 import X_sim2, y_sim2, true_preds_sim2, R2_sim2
+import numpy as np
 import GA
 
 def test_sim1_output():
@@ -7,10 +8,10 @@ def test_sim1_output():
     selected_sim1 = result_sim1["selected"]
 
     # Number of predictors between 2 and 6
-    assert 2 <= len(selected_sim1) <= 6
+    assert 2 <= np.sum(selected_sim1) <= 6
 
     # At least 2 of the true predictors are selected 
-    selected_set_sim1 = set(selected_sim1)
+    selected_set_sim1 = set(np.flatnonzero(selected_sim1))
     num_correct_sim1 = len(selected_set_sim1.intersection(true_preds_sim1))
     assert num_correct_sim1 >= 2
 
@@ -31,10 +32,10 @@ def test_sim2_output():
     selected_sim2 = result_sim2["selected"]
 
     # Number of predictors between 1 and 5
-    assert 1 <= len(selected_sim2) <= 5
+    assert 1 <= np.sum(selected_sim2) <= 5
 
     # At least 2 of the true predictors are selected 
-    selected_set_sim2 = set(selected_sim2)
+    selected_set_sim2 = set(np.flatnonzero(selected_sim2))
     num_correct_sim2 = len(selected_set_sim2.intersection(true_preds_sim2))
     assert num_correct_sim2 >= 1
 

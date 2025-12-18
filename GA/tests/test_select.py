@@ -9,26 +9,34 @@ import GA
 # Required tests for select function 
 #########################################################
 def test_output():
-    result1 = GA.select(X_diab, y_diab)
+    result1 = GA.select(X_diab, y_diab)  # dataframe, series as inputs
     assert isinstance(result1, dict)
     assert 'selected' in result1.keys() and 'R2' in result1.keys() and 'R2pen' in result1.keys()
+
+    # Check that can sum `selected` to get number of predictors selected.
+    assert isinstance(np.sum(result1['selected']), (np.int64,np.int32,np.float64))
     
     result2 = GA.select(X_diab, y_diab, penalty=0.1)
     assert isinstance(result2, dict)
+    assert 'selected' in result2.keys() and 'R2' in result2.keys() and 'R2pen' in result2.keys()
+
+def test_req_args():
+    sig = inspect.signature(GA.select)
+    assert "penalty" in sig.parameters
+    assert "pop_size" in sig.parameters
+    assert "n_gen" in sig.parameters
 
 def test_bad_input():
     with pytest.raises(TypeError):
         GA.select(y_diab, X_diab)
 
-def test_req_args():
-    sig = inspect.signature(GA.select)
-    assert "pop_size" in sig.parameters
-    assert "n_gen" in sig.parameters
-
 
 #########################################################
 # Additional tests for select function outputs
 #########################################################
+X_diab_sample = X_diab.head(50)
+y_diab_sample = y_diab.head(50)
+
 def test_select_ouput():
     parent_methods = ["rank", "tournament"]
     crossover_types = ["single", "double"]
@@ -39,8 +47,8 @@ def test_select_ouput():
             for mtype in model_types:
 
                 result = GA.select(
-                    X=X_diab,
-                    y=y_diab,
+                    X=X_diab_sample,
+                    y=y_diab_sample,
                     parent_selection=parent_method,
                     crossover_type=crossover,
                     model_type=mtype
@@ -48,7 +56,7 @@ def test_select_ouput():
 
                 assert isinstance(result, dict)
                 assert len(result) == 3
-                assert isinstance(result["selected"], list)
+                assert isinstance(result["selected"], np.ndarray)
                 assert isinstance(result["R2"], float)
                 assert isinstance(result["R2pen"], float)
                 
