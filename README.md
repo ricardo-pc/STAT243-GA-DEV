@@ -119,9 +119,9 @@ print(f"Penalized cross-validated R^2: {result1["R2pen"]}")
 ```
 
     Number of selected variables: 8
-    Selected variable array: [0 0 1 0 0 0 0 1 0 1 0 0 1 1 0 0 0 0 0 1 0 1 0 0 1 0 0]
-    Cross-validated R^2: 0.7851631854423505
-    Penalized cross-validated R^2: 0.7822002224793876
+    Selected variable array: [0 1 0 1 0 0 0 1 1 1 0 0 1 1 0 0 0 0 0 0 0 0 0 1 0 0 0]
+    Cross-validated R^2: 0.7830646156430003
+    Penalized cross-validated R^2: 0.7801016526800374
 
 Then, we run the genetic algorithm using a lasso regression and the same
 small penalty. We input our own dictionary of model parameters. We can
@@ -149,8 +149,8 @@ print(f"Penalized cross-validated R^2: {result2["R2pen"]}")
 
     Number of selected variables: [0 0 0 1 0 0 0 1 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0]
     Selected variable array: [0 0 0 1 0 0 0 1 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0]
-    Cross-validated R^2: 0.7532747163957894
-    Penalized cross-validated R^2: 0.7517932349143078
+    Cross-validated R^2: 0.751914195347145
+    Penalized cross-validated R^2: 0.7504327138656635
 
 <br>
 
@@ -162,16 +162,16 @@ we only use 30 generations (as opposed to the default 100).
 ``` python
 result3 = select(X=X_scaled, y=y_baseball, model_type="linear", n_gen=30)
 
-print(f"Number of selected variables: {np.array(result3["selected"])}")
+print(f"Number of selected variables: {np.sum(result3["selected"])}")
 print(f"Selected variable array: {result3["selected"]}")
 print(f"Cross-validated R^2: {result3["R2"]}")
 print(f"Penalized cross-validated R^2: {result3["R2pen"]}")
 ```
 
-    Number of selected variables: [1 0 1 1 0 1 1 1 1 0 1 0 1 1 1 1 1 1 0 0 0 0 0 1 1 1 0]
-    Selected variable array: [1 0 1 1 0 1 1 1 1 0 1 0 1 1 1 1 1 1 0 0 0 0 0 1 1 1 0]
-    Cross-validated R^2: 0.7880355973221376
-    Penalized cross-validated R^2: 0.7880355973221376
+    Number of selected variables: 9
+    Selected variable array: [0 0 1 0 0 0 0 1 1 1 0 0 1 1 0 0 0 0 1 1 0 1 0 0 0 0 0]
+    Cross-validated R^2: 0.7830829291944871
+    Penalized cross-validated R^2: 0.7830829291944871
 
 Then, we change the parent_selection from the default “rank” to
 “tournament” and the crossover_type from the default “single” to
@@ -185,16 +185,16 @@ selection applies more selective pressure than rank-based selection.
 result4 = select(X=X_scaled, y=y_baseball, model_type="linear", 
     parent_selection="tournament", crossover_type="double", n_gen=30)
 
-print(f"Number of selected variables: {np.array(result4["selected"])}")
+print(f"Number of selected variables: {np.sum(result4["selected"])}")
 print(f"Selected variable array: {result4["selected"]}")
 print(f"Cross-validated R^2: {result4["R2"]}")
 print(f"Penalized cross-validated R^2: {result4["R2pen"]}")
 ```
 
-    Number of selected variables: [0 0 0 0 0 0 0 1 1 1 0 0 1 1 0 0 0 0 0 1 0 1 0 0 1 0 0]
-    Selected variable array: [0 0 0 0 0 0 0 1 1 1 0 0 1 1 0 0 0 0 0 1 0 1 0 0 1 0 0]
-    Cross-validated R^2: 0.7844628279791469
-    Penalized cross-validated R^2: 0.7844628279791469
+    Number of selected variables: 11
+    Selected variable array: [0 0 0 1 0 0 1 1 1 1 0 0 1 1 0 0 0 0 0 1 0 1 0 1 1 0 0]
+    Cross-validated R^2: 0.7863117732055431
+    Penalized cross-validated R^2: 0.7863117732055431
 
 ### Employee satisfaction example
 
@@ -240,8 +240,8 @@ print(f"Penalized cross-validated R^2: {result5["R2pen"]}")
 
     Number of selected variables: 7
     Selected variable array: [1 1 1 1 1 1 1]
-    Cross-validated R^2: 0.0613260234939218
-    Penalized cross-validated R^2: 0.0613260234939218
+    Cross-validated R^2: 0.061495914742748736
+    Penalized cross-validated R^2: 0.061495914742748736
 
 Then, we run the genetic algorithm using a decision tree regression. We
 can see that the decision tree results in a much better *R*<sup>2</sup>.
@@ -260,9 +260,9 @@ print(f"Penalized cross-validated R^2: {result6["R2pen"]}")
 ```
 
     Number of selected variables: 5
-    Selected variable array: [1 1 1 1 0 1 0]
-    Cross-validated R^2: 0.3990154818658316
-    Penalized cross-validated R^2: 0.3990154818658316
+    Selected variable array: [1 1 1 1 0 0 1]
+    Cross-validated R^2: 0.40340032350885213
+    Penalized cross-validated R^2: 0.40340032350885213
 
 <br>
 

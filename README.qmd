@@ -115,7 +115,7 @@ We again run the genetic algorithm using a linear regression model. But we only 
 ```{python}
 result3 = select(X=X_scaled, y=y_baseball, model_type="linear", n_gen=30)
 
-print(f"Number of selected variables: {np.array(result3["selected"])}")
+print(f"Number of selected variables: {np.sum(result3["selected"])}")
 print(f"Selected variable array: {result3["selected"]}")
 print(f"Cross-validated R^2: {result3["R2"]}")
 print(f"Penalized cross-validated R^2: {result3["R2pen"]}")
@@ -127,7 +127,7 @@ Then, we change the parent_selection from the default "rank" to "tournament" and
 result4 = select(X=X_scaled, y=y_baseball, model_type="linear", 
     parent_selection="tournament", crossover_type="double", n_gen=30)
 
-print(f"Number of selected variables: {np.array(result4["selected"])}")
+print(f"Number of selected variables: {np.sum(result4["selected"])}")
 print(f"Selected variable array: {result4["selected"]}")
 print(f"Cross-validated R^2: {result4["R2"]}")
 print(f"Penalized cross-validated R^2: {result4["R2pen"]}")
