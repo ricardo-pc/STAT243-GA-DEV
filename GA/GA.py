@@ -40,14 +40,14 @@ def select(X, y, parent_selection="rank", crossover_type="single", penalty=None,
     Returns
     -------
     result: dict
-        A dictionary with: selected (numpy array of 1s, indicating selected predictors, and 0s, indicating not selected predictors), R2 (R^2 value of best model), R2pen (penalized R^2 value)
+        A dictionary with: selected (numpy array of 1s, indicating selected predictors, and 0s, indicating predictors not selected), R2 (R^2 value of best model), R2pen (penalized R^2 value)
 
     Examples
     --------
     >>> from sklearn.datasets import load_diabetes
     >>> X_diab, y_diab = load_diabetes(return_X_y=True, as_frame=True)
     >>> result = select(X_diab, y_diab, penalty=0.01)
-    >>> result["selected"]  # array of selected predictors (1s) and not selected predictors (0s)
+    >>> result["selected"]  # array of selected predictors (1s) and predictors not selected (0s)
     ...
     >>> result["R2"] # cross-validated R^2 value
     ...

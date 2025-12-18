@@ -34,7 +34,7 @@ def test_sim2_output():
     # Number of predictors between 1 and 5
     assert 1 <= np.sum(selected_sim2) <= 5
 
-    # At least 2 of the true predictors are selected 
+    # At least 1 of the true predictors is selected 
     selected_set_sim2 = set(np.flatnonzero(selected_sim2))
     num_correct_sim2 = len(selected_set_sim2.intersection(true_preds_sim2))
     assert num_correct_sim2 >= 1
