@@ -1,0 +1,35 @@
+Grade: 92
+
+
+Install and tests:
+
+Fine.
+
+Results on test datasets (see 'results.txt' file):
+
+Diabetes: good
+Test datasets: generally good
+On sparse case found 27 predictors chosen when two are real.
+
+Quite slow on large sparse dataset (1550 s.).
+
+README:
+
+Good overview; clear. 
+
+I would have liked to see more detail about the context of the employee satisfaction dataset - how big is it, where is it from? Also note that whether an R2 is good really depends on context and how "predictable" a given outcome is. 0.39 might actually be quite good for this kind of data. 
+
+In-depth explorations:
+
+Exploration of different methods and GA details on baseball data. One additional example. Didn't go deeply in any particular direction.
+
+Code (on quick read):
+
+Well-organized and clear.
+
+Tests:
+
+Some basic unit tests.
+Some testing of GA with simulated data - good; could have investigated more sparse and saturated situations.
+Good coverage of different possible inputs.
+Extensive tests of invalid inputs.

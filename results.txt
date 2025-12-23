@@ -1,0 +1,43 @@
+Performance on diabetes dataset.
+
+This set of best covariates is based on an exhaustive all subsets search using AIC as the fitness score (rather than CV-based prediction error), with the R^2 simply the in-sample R^2 (and therefore likely a bit too high) based on that set of predictors. Your predictor set might differ a bit and your CV R^2 might be a bit lower. For this task, if your time reaches into the 10s or 100s of seconds (when using a simple method like regression), that would be concerning.
+
+AIC-based best predictors (0-based indexing): 1,2,3,4,5,8 (sex+bmi+bp+s1+s2+s5)
+In-sample R^2: 0.515
+Selected predictors [0 1 1 1 1 1 0 0 1 0].
+Number of predictors 6.
+CV R2: 0.499.
+Time taken: 10.79 s.
+
+
+======================
+Checking results on real dataset 1. Expecting roughly 5 predictors and roughly .75-.8 for CV R2.
+Selected predictors [0 0 1 0 0 0 0 1 0 1 1 0 1 1 1 0 0 0 0 1 0 1 0 0 1 1 0].
+Number of predictors 11.
+CV R2: 0.787.
+Time taken: 44.21 s.
+
+======================
+Checking results on real dataset 2. Expecting roughly 10 predictions and roughly .7 for CV R2 with
+linear regression and possibly roughly 5 predictors and CV R2 of .85 for nonlinear methods.
+Selected predictors [1 1 0 1 1 1 0 1 1 1 1 1 1].
+Number of predictors 11.
+CV R2: 0.716.
+Time taken: 19.01 s.
+
+======================
+Checking results on null dataset. Expecting very few (ideally zero) predictors selected and CV R2 near 0.
+Selected predictors [0 0 0 0 0 0 0 0 0 1 1 0 0].
+Number of predictors 2.
+CV R2: -0.0.
+Time taken: 15.56 s.
+
+======================
+Checking results on simulated sparse dataset (2 real predictors). Expecting CV R2 of roughly 0.03.
+Selected predictors [0 0 0 0 0 0 0 0 1 0 1 0 1 0 0 0 0 0 1 0 0 1 0 0 0 0 0 0 1 1 0 0 1 1 1 0 0
+ 1 0 1 0 0 0 0 0 0 1 0 1 0 0 0 0 0 1 0 0 1 0 0 1 0 0 0 1 0 1 0 0 1 0 0 0 0
+ 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0
+ 0 0 0 0 0 0 0 1 1 0].
+Number of predictors 27.
+CV R2: 0.029.
+Time taken: 1549.98 s.
